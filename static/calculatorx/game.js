@@ -154,6 +154,7 @@
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' || state.playing || state.preparing) return;
     if (ui.welcome.hidden && ui.result.hidden) return;
+    if (event.target.closest('a, button, input, select, textarea, [role="button"]')) return;
     event.preventDefault();
     prepareRound();
   });

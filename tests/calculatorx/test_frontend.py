@@ -35,6 +35,23 @@ def test_game_script_uses_absolute_deadline_and_round_token():
     assert "fetch('/games/calculatorx/session'" in script
 
 
+def test_enter_shortcut_leaves_interactive_targets_to_native_behavior():
+    script = (ROOT / "static/calculatorx/game.js").read_text()
+    keydown_handler = script[script.index("document.addEventListener('keydown'") :]
+    interactive_guard = (
+        "if (event.target.closest('a, button, input, select, textarea, "
+        "[role=\"button\"]')) return;"
+    )
+
+    assert interactive_guard in keydown_handler
+    assert keydown_handler.index(interactive_guard) < keydown_handler.index(
+        "event.preventDefault();"
+    )
+    assert keydown_handler.index(interactive_guard) < keydown_handler.index(
+        "prepareRound();"
+    )
+
+
 def test_styles_include_reduced_motion_fallback():
     css = (ROOT / "static/calculatorx/style.css").read_text()
 
