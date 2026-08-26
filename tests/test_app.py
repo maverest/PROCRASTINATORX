@@ -10,6 +10,7 @@ import pytest
 
 import games.orquantix.runtime as runtime_module
 from app import Shell, create_app
+from games.orquantix.runtime import OrquantixRuntime
 
 
 @pytest.fixture
@@ -27,25 +28,32 @@ def client(shell):
         yield c
 
 
-def test_home_redirects_into_the_game(client):
-    resp = client.get("/", follow_redirects=False)
-    assert resp.status_code == 302
-    assert resp.headers["Location"].endswith("/games/orquantix/")
+def test_home_renders_catalog_without_starting_orquantix(client):
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert b"PROCRASTINATOR" in response.data
+    assert b"Orquantix" in response.data
+    assert b'href="/games/orquantix/"' in response.data
+    assert client.get("/status").get_json()["phase"] == "idle"
 
 
-def test_status_reports_idle_before_the_game_is_entered(client):
-    data = client.get("/status").get_json()
-    assert data["phase"] == "idle"
+def test_legacy_status_still_reports_orquantix_idle(client):
+    response = client.get("/status")
+
+    assert response.status_code == 200
+    assert response.get_json()["phase"] == "idle"
 
 
-def test_direct_orquantix_entry_starts_runtime(client, shell, monkeypatch):
-    # Le chargement paresseux doit démarrer depuis l'index du jeu lui-même,
-    # pas seulement depuis / : sinon un accès direct à /games/orquantix/
-    # laisse le front sonder indéfiniment à phase "idle".
+def test_direct_orquantix_entry_still_starts_loading(tmp_path, monkeypatch):
     calls = []
-    monkeypatch.setattr(shell.orquantix_runtime, "ensure_loaded", lambda: calls.append("load"))
+    monkeypatch.setattr(OrquantixRuntime, "ensure_loaded", lambda self: calls.append("load"))
+    shell = Shell(tmp_path)
+    flask_app = create_app(shell)
+    flask_app.config["TESTING"] = True
 
-    response = client.get("/games/orquantix/")
+    with flask_app.test_client() as direct_client:
+        response = direct_client.get("/games/orquantix/")
 
     assert response.status_code == 200
     assert calls == ["load"]

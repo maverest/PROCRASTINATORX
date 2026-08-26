@@ -3,10 +3,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from flask import Flask, jsonify, redirect, url_for
+from flask import Flask, jsonify, render_template
 
-from games.orquantix import GAME_ID, build_blueprint
-from games.orquantix.runtime import OrquantixRuntime
+from games.catalog import build_catalog
+from games.registration import MountedGame
 
 APP_NAME = "PROCRASTINATOR"
 
@@ -16,14 +16,11 @@ class Shell:
 
     def __init__(self, data_dir: Path) -> None:
         self.data_dir = data_dir
-        self.orquantix_runtime = OrquantixRuntime(data_dir)
-        self.orquantix = self.orquantix_runtime.state
+        self.games = build_catalog(data_dir)
+        self._games_by_id = {game.metadata.id: game for game in self.games}
 
-    def ensure_loaded(self, game_id: str) -> None:
-        """Déclenche le chargement d'un jeu, une seule fois."""
-        if game_id != GAME_ID:
-            raise KeyError(game_id)
-        self.orquantix_runtime.ensure_loaded()
+    def get_game(self, game_id: str) -> MountedGame:
+        return self._games_by_id[game_id]
 
 
 def create_app(shell: Shell) -> Flask:
@@ -31,20 +28,18 @@ def create_app(shell: Shell) -> Flask:
     static_dir = os.environ.get("PROCRASTINATOR_STATIC", "static")
     app = Flask(__name__, template_folder=templates_dir, static_folder=static_dir)
 
-    app.register_blueprint(
-        build_blueprint(shell.orquantix, on_load=lambda: shell.ensure_loaded(GAME_ID))
-    )
+    for game in shell.games:
+        app.register_blueprint(game.blueprint)
 
     @app.route("/")
     def home():
-        # Phase 2 : le menu de PROCRASTINATOR. En attendant, on entre dans le jeu.
-        # Le chargement paresseux se déclenche sur l'index du jeu lui-même
-        # (routes.py), pas ici : cette redirection l'atteint de toute façon,
-        # et un accès direct à /games/orquantix/ le déclenche aussi.
-        return redirect(url_for("orquantix.index"))
+        return render_template("index.html", games=shell.games)
 
     @app.route("/status")
     def status():
-        return jsonify(shell.orquantix.snapshot())
+        game = shell.get_game("orquantix")
+        if game.status is None:
+            return jsonify({"error": "status unavailable"}), 404
+        return jsonify(game.status())
 
     return app

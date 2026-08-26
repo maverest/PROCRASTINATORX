@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from games.orquantix import engine
 from games.orquantix.dictionary import DICT_FILENAME, IDX_FILENAME, Littre
@@ -12,12 +13,35 @@ from games.orquantix.vocabulary import (
     compute_difficulty_thresholds,
 )
 
+if TYPE_CHECKING:
+    from games.registration import MountedGame
+
 GAME_ID = "orquantix"
 GAME_NAME = "Orquantix"
 MODEL_FILENAME = "frWiki_no_phrase_no_postag_1000_skip_cut200.bin"
 LEXIQUE_FILENAME = "Lexique383.tsv"
 
-__all__ = ["GAME_ID", "GAME_NAME", "OrquantixState", "build_blueprint", "load_resources"]
+__all__ = ["GAME_ID", "GAME_NAME", "OrquantixState", "build_blueprint", "build_game", "load_resources"]
+
+
+def build_game(data_dir: Path) -> MountedGame:
+    from games.orquantix.runtime import OrquantixRuntime
+    from games.registration import GameMetadata, MountedGame
+
+    runtime = OrquantixRuntime(data_dir)
+    metadata = GameMetadata(
+        id=GAME_ID,
+        name=GAME_NAME,
+        description="Trouve le mot secret par proximité sémantique.",
+        icon="≋",
+        theme="orquantix",
+        endpoint="orquantix.index",
+    )
+    return MountedGame(
+        metadata=metadata,
+        blueprint=build_blueprint(runtime.state, on_load=runtime.ensure_loaded),
+        status=runtime.state.snapshot,
+    )
 
 
 def load_resources(state: OrquantixState, data_dir: Path) -> None:
