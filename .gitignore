@@ -9,4 +9,5 @@ dist/
 *.spec
 
 .superpowers/
+.worktrees/
 .DS_Store
