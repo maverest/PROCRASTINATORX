@@ -38,6 +38,29 @@ body::before {
   z-index: 0;
 }
 
+.back-to-games {
+  position: relative;
+  z-index: 4;
+  display: block;
+  width: max-content;
+  margin: 18px 0 0 20px;
+  padding: .45rem .7rem;
+  color: var(--abysse-cyan-dim);
+  background: rgba(6, 13, 24, .72);
+  border: 1px solid rgba(127, 227, 240, .24);
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.back-to-games:hover,
+.back-to-games:focus-visible {
+  color: var(--abysse-cyan);
+  border-color: var(--abysse-cyan);
+  outline: none;
+}
+
 /* ===== Scène animée (Abysse) =====
    Décor derrière le jeu : vagues, bateau, bulles, orque qui saute, fille
    sur son rocher. Porté depuis abysse-scene.html (option A "Vivant"),

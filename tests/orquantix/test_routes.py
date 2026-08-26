@@ -34,11 +34,24 @@ def state():
 
 @pytest.fixture
 def client(state):
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder="../../templates")
+
+    @app.get("/")
+    def home():
+        return "menu"
+
     app.register_blueprint(build_blueprint(state))
     app.config["TESTING"] = True
     with app.test_client() as c:
         yield c
+
+
+def test_index_links_back_to_games(client):
+    page = client.get("/games/orquantix/").data.decode()
+
+    assert 'class="back-to-games"' in page
+    assert 'href="/"' in page
+    assert "Retour aux jeux" in page
 
 
 def test_routes_are_namespaced_under_the_game(client):
