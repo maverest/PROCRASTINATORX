@@ -45,6 +45,19 @@ def test_home_lists_orquantix_then_calculatorx(client):
     assert 'href="/games/calculatorx/"' in page
 
 
+def test_home_only_displays_game_titles_and_actions(client):
+    page = client.get("/").data.decode()
+
+    assert 'class="shell-eyebrow"' not in page
+    assert 'class="shell-tagline"' not in page
+    assert "Trouve le mot secret par proximité sémantique." not in page
+    assert "120 secondes de calcul mental." not in page
+    assert "PROCRASTINATORX" in page
+    assert "Orquantix" in page
+    assert "CalculatorX" in page
+    assert page.count("Ouvrir") == 2
+
+
 def test_legacy_status_still_reports_orquantix_idle(client):
     response = client.get("/status")
 
