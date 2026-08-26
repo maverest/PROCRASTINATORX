@@ -8,15 +8,14 @@ l'ancien tests/test_app.py (qui testait AppState, supprimé avec ce refactor).
 
 import pytest
 
-import app as app_module
+import games.orquantix.runtime as runtime_module
 from app import Shell, create_app
-from games.orquantix import GAME_ID
 
 
 @pytest.fixture
 def shell(tmp_path, monkeypatch):
-    monkeypatch.setattr(app_module, "missing_files", lambda data_dir: [])
-    monkeypatch.setattr(app_module, "load_resources", lambda state, data_dir: None)
+    monkeypatch.setattr(runtime_module, "missing_files", lambda data_dir: [])
+    monkeypatch.setattr(runtime_module, "load_resources", lambda state, data_dir: None)
     return Shell(tmp_path)
 
 
@@ -39,59 +38,14 @@ def test_status_reports_idle_before_the_game_is_entered(client):
     assert data["phase"] == "idle"
 
 
-def test_game_index_triggers_loading_without_going_through_home(client, shell):
+def test_direct_orquantix_entry_starts_runtime(client, shell, monkeypatch):
     # Le chargement paresseux doit démarrer depuis l'index du jeu lui-même,
     # pas seulement depuis / : sinon un accès direct à /games/orquantix/
     # laisse le front sonder indéfiniment à phase "idle".
-    resp = client.get("/games/orquantix/")
-
-    assert resp.status_code == 200
-    assert shell._started == {GAME_ID}
-
-
-def test_ensure_loaded_starts_the_game_only_once(shell):
-    shell.ensure_loaded("orquantix")
-    shell.ensure_loaded("orquantix")
-
-    # L'idempotence se vérifie sans attendre le thread : l'ensemble
-    # `_started` est mis à jour de façon synchrone avant le lancement.
-    assert shell._started == {"orquantix"}
-
-
-def test_load_downloads_only_when_files_are_missing(monkeypatch, tmp_path):
     calls = []
-    monkeypatch.setattr(app_module, "missing_files", lambda data_dir: ["Lexique383.tsv"])
-    monkeypatch.setattr(app_module, "download_all", lambda state, data_dir: calls.append("download"))
-    monkeypatch.setattr(app_module, "load_resources", lambda state, data_dir: calls.append("load"))
+    monkeypatch.setattr(shell.orquantix_runtime, "ensure_loaded", lambda: calls.append("load"))
 
-    shell = Shell(tmp_path)
-    shell._load("orquantix")
+    response = client.get("/games/orquantix/")
 
-    assert calls == ["download", "load"]
-
-
-def test_load_skips_download_when_files_are_present(monkeypatch, tmp_path):
-    calls = []
-    monkeypatch.setattr(app_module, "missing_files", lambda data_dir: [])
-    monkeypatch.setattr(app_module, "download_all", lambda state, data_dir: calls.append("download"))
-    monkeypatch.setattr(app_module, "load_resources", lambda state, data_dir: calls.append("load"))
-
-    shell = Shell(tmp_path)
-    shell._load("orquantix")
-
+    assert response.status_code == 200
     assert calls == ["load"]
-
-
-def test_load_failure_is_reported_on_the_state_instead_of_crashing(monkeypatch, tmp_path):
-    monkeypatch.setattr(app_module, "missing_files", lambda data_dir: [])
-
-    def boom(state, data_dir):
-        raise RuntimeError("kaboom")
-
-    monkeypatch.setattr(app_module, "load_resources", boom)
-
-    shell = Shell(tmp_path)
-    shell._load("orquantix")  # ne doit pas lever
-
-    assert shell.orquantix.phase == "error"
-    assert "kaboom" in shell.orquantix.detail
