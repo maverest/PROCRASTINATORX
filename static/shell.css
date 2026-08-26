@@ -34,6 +34,7 @@
 .game-card-copy span { color: var(--shell-muted); line-height: 1.45; }
 .game-card-action { margin-top: auto; padding-top: 20px; color: var(--shell-rust); font-weight: 800; }
 .game-card--orquantix { border-bottom: 5px solid var(--shell-sea); }
+.game-card--calculatorx { border-bottom: 5px solid var(--shell-rust); }
 
 @media (prefers-reduced-motion: reduce) {
   .game-card { transition: none; }

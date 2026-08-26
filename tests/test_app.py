@@ -38,6 +38,13 @@ def test_home_renders_catalog_without_starting_orquantix(client):
     assert client.get("/status").get_json()["phase"] == "idle"
 
 
+def test_home_lists_orquantix_then_calculatorx(client):
+    page = client.get("/").data.decode()
+
+    assert page.index("Orquantix") < page.index("CalculatorX")
+    assert 'href="/games/calculatorx/"' in page
+
+
 def test_legacy_status_still_reports_orquantix_idle(client):
     response = client.get("/status")
 
