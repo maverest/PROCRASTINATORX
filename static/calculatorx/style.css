@@ -115,12 +115,9 @@ legend { margin-bottom: 10px; color: var(--muted); font-size: .76rem; font-weigh
 @media (max-width: 520px) {
   .calculatorx-shell { width: min(100% - 22px, 760px); padding-top: 14px; }
   .range-group { grid-template-columns: 34px minmax(0, 1fr) auto minmax(0, 1fr); }
-  .range-group label:nth-of-type(2) { grid-column: 2; }
-  .range-group > span[aria-hidden="true"]:nth-of-type(2) { grid-column: 3; }
-  .range-group label:nth-of-type(3) { grid-column: 4; }
-  .range-group label:nth-of-type(4) { grid-column: 2; }
+  .range-group label:nth-of-type(3) { grid-column: 2; }
   .range-group > span[aria-hidden="true"]:nth-of-type(3) { grid-column: 3; }
-  .range-group label:nth-of-type(5) { grid-column: 4; }
+  .range-group label:nth-of-type(4) { grid-column: 4; }
   .problem-text { margin-top: 72px; }
 }
 

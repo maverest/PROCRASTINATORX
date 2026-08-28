@@ -72,5 +72,9 @@ def test_game_style_is_speed_oriented_and_reduced_motion_safe():
 
     assert "font-variant-numeric: tabular-nums" in css
     assert "#stopButton" in css
+    assert ".range-group label:nth-of-type(3) { grid-column: 2; }" in css
+    assert '.range-group > span[aria-hidden="true"]:nth-of-type(3) { grid-column: 3; }' in css
+    assert ".range-group label:nth-of-type(4) { grid-column: 4; }" in css
+    assert "label:nth-of-type(5)" not in css
     assert "@media (prefers-reduced-motion: reduce)" in css
     assert "animation: none" in css
