@@ -19,16 +19,29 @@ python main.py
 Au premier lancement, l'application télécharge ses ressources — Lexique383,
 un modèle Word2Vec français et le dictionnaire Littré, environ 180 Mo au
 total — dans `~/Library/Application Support/Procrastinator/`. Les lancements
-suivants sont immédiats, la fenêtre s'ouvrant directement sur le jeu.
+suivants sont immédiats.
+
+Au lancement, PROCRASTINATOR ouvre son menu de mini-jeux. Orquantix ne charge
+ses ressources qu’au moment où sa carte est ouverte.
 
 `python main.py --design` ouvre l'interface dans le navigateur par défaut
 plutôt que dans la fenêtre native, ce qui donne accès aux outils de
 développement.
 
+Pour lancer directement cette branche de travail avec l'environnement déjà
+installé :
+
+```bash
+cd /Users/mverest/Desktop/PROCRASTINATORX/.worktrees/menu-calculatorx
+/Users/mverest/Desktop/PROCRASTINATORX/.venv/bin/python main.py --design
+```
+
 ## Construire l'application
 
 ```bash
+cd /Users/mverest/Desktop/PROCRASTINATORX/.worktrees/menu-calculatorx
 ./build.sh
+open dist/PROCRASTINATOR.app
 ```
 
 Le script crée son propre environnement virtuel (`.venv_build`), installe
@@ -50,6 +63,22 @@ Trouver le mot mystère — toujours un nom commun — en proposant des mots.
 Chaque proposition reçoit une **température** de 0 à 100 : 50° signifie que
 le mot fait partie des mille plus proches voisins du mot mystère, et son
 **rang** apparaît alors. L'orque commente.
+
+## CalculatorX
+
+Résoudre le plus de calculs possible, entièrement au clavier après le
+lancement :
+
+- **Classique** : 120 secondes, avec les opérations et les bornes de Zetamac ;
+- **Personnalisé** : durée, opérations et bornes configurables, avec un bouton
+  Reset qui rétablit les réglages classiques ;
+- **Constance** : 120 secondes de calculs faciles ou volontairement absurdes,
+  construits autour de 0, 1 et de petits nombres.
+
+Les scores des parties sont conservés dans un historique local sur le Mac.
+Les statistiques détaillées affichées sont celles de la dernière séance. Il
+n'y a pas encore de classement partagé entre plusieurs machines : son
+hébergement distant fera l'objet d'une étape séparée.
 
 ## Ressources et attributions
 
