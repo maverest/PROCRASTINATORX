@@ -34,6 +34,12 @@ def test_summary_uses_the_median_instead_of_the_average():
     assert summary["+"] == OperationSummary(3, 3000, 1000, 10_000)
 
 
+def test_summary_rounds_half_milliseconds_up():
+    summary = summarize([ResponseSample("+", 1000), ResponseSample("+", 1001)])
+
+    assert summary["+"] == OperationSummary(2, 1001, 1000, 1001)
+
+
 def test_summary_orders_operations_for_a_stable_json_contract():
     summary = summarize(
         [
@@ -76,3 +82,7 @@ def test_projection_starts_after_three_answers():
 
 def test_projection_handles_a_zero_elapsed_time_without_dividing_by_zero():
     assert project_score(3, 0, 120) is None
+
+
+def test_projection_rounds_half_scores_up():
+    assert project_score(3, 16_000, 120) == 23

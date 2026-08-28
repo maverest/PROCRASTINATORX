@@ -52,7 +52,7 @@ def summarize(samples: Sequence[ResponseSample]) -> dict[str, OperationSummary]:
     return {
         operation: OperationSummary(
             count=len(elapsed_times),
-            median_ms=round(median(elapsed_times)),
+            median_ms=_round_half_up(median(elapsed_times)),
             fastest_ms=min(elapsed_times),
             slowest_ms=max(elapsed_times),
         )
@@ -75,4 +75,9 @@ def project_score(score: int, elapsed_ms: int, duration_seconds: int) -> int | N
     ):
         return None
 
-    return round(score * duration_seconds * 1_000 / elapsed_ms)
+    numerator = score * duration_seconds * 1_000
+    return (2 * numerator + elapsed_ms) // (2 * elapsed_ms)
+
+
+def _round_half_up(value: int | float) -> int:
+    return int(value + 0.5)
