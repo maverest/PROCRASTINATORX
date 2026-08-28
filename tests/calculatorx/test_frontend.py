@@ -118,6 +118,22 @@ def test_result_submission_error_is_rendered_inside_result_panel():
     assert "ui.resultError.textContent" in script
 
 
+def test_scores_screen_loads_and_clears_local_history():
+    script = GAME_SCRIPT.read_text()
+
+    assert "fetch('/games/calculatorx/history')" in script
+    assert "method: 'DELETE'" in script
+    assert "window.confirm" in script
+
+
+def test_scores_screen_exposes_an_accessible_history_error():
+    html = (ROOT / "templates/calculatorx/index.html").read_text()
+    scores_panel = html[html.index('id="scoresPanel"') : html.index("</section>", html.index('id="scoresPanel"'))]
+
+    assert 'id="historyError"' in scores_panel
+    assert 'role="alert"' in scores_panel
+
+
 def test_game_style_is_speed_oriented_and_reduced_motion_safe():
     css = (ROOT / "static/calculatorx/style.css").read_text()
 

@@ -44,6 +44,9 @@
     operationSummaries: document.getElementById('operationSummaries'),
     error: document.getElementById('errorMessage'),
     resultError: document.getElementById('resultError'),
+    historyList: document.getElementById('historyList'),
+    historyError: document.getElementById('historyError'),
+    clearHistoryButton: document.getElementById('clearHistoryButton'),
   };
 
   const state = {
@@ -64,6 +67,7 @@
     samples: [],
     endedReason: null,
     lastResult: null,
+    historyToken: 0,
   };
 
   function classicCustomConfig() {
@@ -163,7 +167,9 @@
 
   function navigateToPanel(panel) {
     cancelPreparation();
+    ++state.historyToken;
     showPanel(panel);
+    if (panel === ui.scores) loadHistory();
   }
 
   function clearError() {
@@ -181,6 +187,119 @@
   function showResultError(message) {
     ui.resultError.textContent = message;
     ui.resultError.hidden = false;
+  }
+
+  function clearHistoryError() {
+    ui.historyError.hidden = true;
+    ui.historyError.textContent = '';
+  }
+
+  function showHistoryError(message) {
+    ui.historyError.textContent = message;
+    ui.historyError.hidden = false;
+  }
+
+  function isHistorySession(session) {
+    return session
+      && Number.isInteger(session.id)
+      && typeof session.played_at === 'string'
+      && ['classic', 'custom', 'constance'].includes(session.mode)
+      && isIntegerInRange(session.duration_seconds, 1, 3600)
+      && isIntegerInRange(session.score, 0, 9999)
+      && ['timeout', 'stopped', 'exhausted'].includes(session.ended_reason)
+      && ['not_applicable', 'pending', 'submitted'].includes(session.submission_status)
+      && (session.nickname === null || typeof session.nickname === 'string');
+  }
+
+  function formatHistoryDate(playedAt) {
+    const date = new Date(playedAt);
+    if (Number.isNaN(date.valueOf())) return playedAt;
+    return new Intl.DateTimeFormat('fr-CH', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(date);
+  }
+
+  function renderHistory(sessions) {
+    ui.historyList.replaceChildren();
+    if (sessions.length === 0) {
+      const empty = document.createElement('li');
+      empty.className = 'history-empty';
+      empty.textContent = 'Aucun score.';
+      ui.historyList.append(empty);
+      ui.clearHistoryButton.disabled = true;
+      return;
+    }
+
+    sessions.forEach((session) => {
+      const entry = document.createElement('li');
+      const details = document.createElement('span');
+      details.textContent = `${formatHistoryDate(session.played_at)} · ${session.mode} · ${session.duration_seconds}s · ${session.score}`;
+      entry.append(details);
+
+      if (session.ended_reason === 'stopped' || session.submission_status === 'pending') {
+        const marks = document.createElement('span');
+        marks.className = 'history-marks';
+        if (session.ended_reason === 'stopped') {
+          const stopped = document.createElement('span');
+          stopped.textContent = '■';
+          stopped.setAttribute('aria-label', 'Séance arrêtée');
+          marks.append(stopped);
+        }
+        if (session.submission_status === 'pending') {
+          const pending = document.createElement('span');
+          pending.className = 'history-pending';
+          pending.textContent = '○';
+          pending.setAttribute('aria-label', 'Réservé pour le classement');
+          marks.append(pending);
+        }
+        entry.append(marks);
+      }
+      ui.historyList.append(entry);
+    });
+    ui.clearHistoryButton.disabled = false;
+  }
+
+  async function loadHistory() {
+    const token = ++state.historyToken;
+    clearHistoryError();
+    ui.historyList.setAttribute('aria-busy', 'true');
+    try {
+      const response = await fetch('/games/calculatorx/history');
+      if (!response.ok) throw new Error('history unavailable');
+      const payload = await response.json();
+      if (!payload || !Array.isArray(payload.sessions) || !payload.sessions.every(isHistorySession)) {
+        throw new Error('invalid history');
+      }
+      if (token !== state.historyToken || ui.scores.hidden) return;
+      renderHistory(payload.sessions);
+    } catch (_error) {
+      if (token === state.historyToken && !ui.scores.hidden) {
+        showHistoryError('Historique indisponible.');
+      }
+    } finally {
+      if (token === state.historyToken) ui.historyList.removeAttribute('aria-busy');
+    }
+  }
+
+  async function clearHistory() {
+    if (!window.confirm('Effacer tous les scores locaux ?')) return;
+    const token = ++state.historyToken;
+    clearHistoryError();
+    ui.clearHistoryButton.disabled = true;
+    ui.historyList.setAttribute('aria-busy', 'true');
+    try {
+      const response = await fetch('/games/calculatorx/history', {method: 'DELETE'});
+      if (!response.ok) throw new Error('history unavailable');
+      if (token === state.historyToken && !ui.scores.hidden) loadHistory();
+    } catch (_error) {
+      if (token === state.historyToken && !ui.scores.hidden) {
+        showHistoryError('Effacement impossible.');
+        ui.clearHistoryButton.disabled = false;
+      }
+    } finally {
+      if (token === state.historyToken) ui.historyList.removeAttribute('aria-busy');
+    }
   }
 
   function numberFrom(input) {
@@ -455,6 +574,7 @@
     ui.customDuration.focus();
   });
   ui.scoresButton.addEventListener('click', () => navigateToPanel(ui.scores));
+  ui.clearHistoryButton.addEventListener('click', clearHistory);
   ui.resetClassicButton.addEventListener('click', () => applyConfigToForm(classicCustomConfig()));
   ui.customForm.addEventListener('submit', (event) => {
     event.preventDefault();
