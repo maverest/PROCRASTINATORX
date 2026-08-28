@@ -7,6 +7,7 @@ from typing import Protocol, TypeVar
 DURATION_SECONDS = 120
 PROBLEM_COUNT = 512
 OPERATIONS = ("+", "−", "×", "÷")
+CONSTANCE_OPERATIONS = OPERATIONS
 T = TypeVar("T")
 
 
@@ -61,6 +62,18 @@ def classic_config() -> GameConfig:
         addition_right=NumberRange(2, 100),
         multiplication_left=NumberRange(2, 12),
         multiplication_right=NumberRange(2, 100),
+    )
+
+
+def constance_config() -> GameConfig:
+    return GameConfig(
+        mode="constance",
+        duration_seconds=DURATION_SECONDS,
+        operations=CONSTANCE_OPERATIONS,
+        addition_left=NumberRange(0, 5),
+        addition_right=NumberRange(0, 5),
+        multiplication_left=NumberRange(0, 100),
+        multiplication_right=NumberRange(0, 100),
     )
 
 
@@ -136,6 +149,9 @@ def _parse_range(value: object, field: str) -> NumberRange:
 
 
 def generate_problem(config: GameConfig, rng: RandomSource) -> Problem:
+    if config.mode == "constance":
+        return generate_constance_problem(rng)
+
     operation = rng.choice(config.operations)
     if operation in ("+", "−"):
         first = _draw(config.addition_left, rng)
@@ -149,6 +165,61 @@ def generate_problem(config: GameConfig, rng: RandomSource) -> Problem:
     if operation == "×":
         return Problem(first, operation, second, first * second)
     return Problem(first * second, operation, first, second)
+
+
+def generate_constance_problem(rng: RandomSource) -> Problem:
+    operation = rng.choice(CONSTANCE_OPERATIONS)
+    if operation == "+":
+        return _generate_constance_addition(rng)
+    if operation == "−":
+        return _generate_constance_subtraction(rng)
+    if operation == "×":
+        return _generate_constance_multiplication(rng)
+    return _generate_constance_division(rng)
+
+
+def _generate_constance_addition(rng: RandomSource) -> Problem:
+    template = rng.choice(("small-small", "identity"))
+    if template == "small-small":
+        left = rng.randint(0, 5)
+        right = rng.randint(0, 5)
+    else:
+        left = rng.choice((0, 1))
+        right = rng.randint(0, 100)
+    return Problem(left, "+", right, left + right)
+
+
+def _generate_constance_subtraction(rng: RandomSource) -> Problem:
+    template = rng.choice(("zero", "same", "sum-minus-first"))
+    if template == "zero":
+        left = rng.randint(0, 100)
+        right = 0
+    elif template == "same":
+        left = rng.randint(0, 100)
+        right = left
+    else:
+        first = rng.randint(0, 5)
+        answer = rng.randint(0, 5)
+        left = first + answer
+        right = first
+    return Problem(left, "−", right, left - right)
+
+
+def _generate_constance_multiplication(rng: RandomSource) -> Problem:
+    template = rng.choice(("zero", "identity"))
+    left = 0 if template == "zero" else 1
+    right = rng.randint(0, 100)
+    return Problem(left, "×", right, left * right)
+
+
+def _generate_constance_division(rng: RandomSource) -> Problem:
+    template = rng.choice(("zero", "one", "same"))
+    value = rng.randint(1, 100)
+    if template == "zero":
+        return Problem(0, "÷", value, 0)
+    if template == "one":
+        return Problem(value, "÷", 1, value)
+    return Problem(value, "÷", value, 1)
 
 
 def _draw(number_range: NumberRange, rng: RandomSource, *, nonzero: bool = False) -> int:

@@ -9,6 +9,8 @@ from games.calculatorx.engine import (
     PROBLEM_COUNT,
     Problem,
     classic_config,
+    constance_config,
+    generate_constance_problem,
     generate_problem,
     generate_problems,
     parse_config,
@@ -23,6 +25,22 @@ class StubRandom:
     def choice(self, values):
         assert tuple(values) == ("+", "−", "×", "÷")
         return self.operation
+
+    def randint(self, minimum: int, maximum: int) -> int:
+        value = next(self.integers)
+        assert minimum <= value <= maximum
+        return value
+
+
+class ConstanceRandom:
+    def __init__(self, operation: str, template: str, integers: list[int]):
+        self.choices = iter((operation, template))
+        self.integers = iter(integers)
+
+    def choice(self, values):
+        value = next(self.choices)
+        assert value in values
+        return value
 
     def randint(self, minimum: int, maximum: int) -> int:
         value = next(self.integers)
@@ -174,3 +192,26 @@ def test_custom_division_never_uses_zero_divisor():
 
     assert all(problem.operator == "÷" and problem.right != 0 for problem in problems)
     assert all(problem.left % problem.right == 0 for problem in problems)
+
+
+@pytest.mark.parametrize(
+    ("operation", "template", "integers", "expected"),
+    [
+        ("+", "small-small", [3, 2], Problem(3, "+", 2, 5)),
+        ("−", "same", [5], Problem(5, "−", 5, 0)),
+        ("×", "identity", [32], Problem(1, "×", 32, 32)),
+        ("÷", "zero", [9], Problem(0, "÷", 9, 0)),
+    ],
+)
+def test_constance_generates_trivial_families(operation, template, integers, expected):
+    rng = ConstanceRandom(operation, template, integers)
+
+    assert generate_constance_problem(rng) == expected
+
+
+def test_constance_division_is_always_defined_and_exact():
+    problems = generate_problems(constance_config(), 2_000, random.Random(42))
+    divisions = [problem for problem in problems if problem.operator == "÷"]
+
+    assert divisions
+    assert all(problem.right != 0 and problem.left % problem.right == 0 for problem in divisions)
