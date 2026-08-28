@@ -9,39 +9,112 @@
 <body>
   <main class="calculatorx-shell" id="calculatorxApp">
     <nav class="calculatorx-nav" aria-label="Navigation du jeu">
-      <a href="{{ url_for('home') }}">← Retour aux jeux</a>
-      <span>Calcul mental</span>
+      <a href="{{ url_for('home') }}">← Jeux</a>
+      <span aria-hidden="true">CalculatorX</span>
     </nav>
 
-    <section class="panel welcome-panel" id="welcomePanel" aria-labelledby="welcomeTitle">
-      <div class="calculatorx-mark" aria-hidden="true">×÷</div>
-      <p class="eyebrow">Sprint arithmétique</p>
-      <h1 id="welcomeTitle">CalculatorX</h1>
-      <p>Deux minutes. Une réponse après l’autre.</p>
-      <div class="rule-chips" aria-label="Règles de la partie">
-        <span>120 secondes</span><span>+ − × ÷</span>
+    <section class="panel mode-panel" id="modePanel" aria-labelledby="modeTitle">
+      <h1 id="modeTitle">CalculatorX</h1>
+      <div class="mode-actions" aria-label="Choisir un mode">
+        <button class="mode-button mode-button--primary" id="classicButton" type="button">Classique</button>
+        <button class="mode-button" id="customButton" type="button">Perso</button>
+        <button class="mode-button" id="constanceButton" type="button">Constance</button>
+        <button class="mode-button" id="scoresButton" type="button">Scores</button>
       </div>
-      <button class="primary-button" id="startButton" type="button">C’est parti !</button>
       <p class="error-message" id="errorMessage" role="alert" hidden></p>
     </section>
 
-    <section class="panel game-panel" id="gamePanel" aria-label="Partie en cours" hidden>
+    <section class="panel settings-panel" id="settingsPanel" aria-labelledby="settingsTitle" hidden>
+      <header class="panel-heading">
+        <h2 id="settingsTitle">Perso</h2>
+        <button class="text-button" type="button" data-panel="modes">Retour</button>
+      </header>
+      <form id="customForm" class="settings-form">
+        <label class="duration-field" for="customDuration">s
+          <input id="customDuration" name="duration_seconds" type="number" min="1" max="3600" value="120" inputmode="numeric" required>
+        </label>
+
+        <fieldset class="operation-fields">
+          <legend>Opérations</legend>
+          <label><input id="operationAdd" name="operations" type="checkbox" value="+" checked> <span class="operator operator--add">+</span></label>
+          <label><input id="operationSubtract" name="operations" type="checkbox" value="−" checked> <span class="operator operator--subtract">−</span></label>
+          <label><input id="operationMultiply" name="operations" type="checkbox" value="×" checked> <span class="operator operator--multiply">×</span></label>
+          <label><input id="operationDivide" name="operations" type="checkbox" value="÷" checked> <span class="operator operator--divide">÷</span></label>
+        </fieldset>
+
+        <fieldset class="range-fields">
+          <legend>Bornes</legend>
+          <div class="range-group">
+            <span class="range-label">+ −</span>
+            <label><span class="visually-hidden">Premier nombre minimum, addition et soustraction</span><input id="additionLeftMinimum" name="addition_left_minimum" type="number" min="0" max="9999" value="2" inputmode="numeric"></label>
+            <span aria-hidden="true">–</span>
+            <label><span class="visually-hidden">Premier nombre maximum, addition et soustraction</span><input id="additionLeftMaximum" name="addition_left_maximum" type="number" min="0" max="9999" value="100" inputmode="numeric"></label>
+            <label><span class="visually-hidden">Deuxième nombre minimum, addition et soustraction</span><input id="additionRightMinimum" name="addition_right_minimum" type="number" min="0" max="9999" value="2" inputmode="numeric"></label>
+            <span aria-hidden="true">–</span>
+            <label><span class="visually-hidden">Deuxième nombre maximum, addition et soustraction</span><input id="additionRightMaximum" name="addition_right_maximum" type="number" min="0" max="9999" value="100" inputmode="numeric"></label>
+          </div>
+          <div class="range-group">
+            <span class="range-label">× ÷</span>
+            <label><span class="visually-hidden">Premier nombre minimum, multiplication et division</span><input id="multiplicationLeftMinimum" name="multiplication_left_minimum" type="number" min="0" max="9999" value="2" inputmode="numeric"></label>
+            <span aria-hidden="true">–</span>
+            <label><span class="visually-hidden">Premier nombre maximum, multiplication et division</span><input id="multiplicationLeftMaximum" name="multiplication_left_maximum" type="number" min="0" max="9999" value="12" inputmode="numeric"></label>
+            <label><span class="visually-hidden">Deuxième nombre minimum, multiplication et division</span><input id="multiplicationRightMinimum" name="multiplication_right_minimum" type="number" min="0" max="9999" value="2" inputmode="numeric"></label>
+            <span aria-hidden="true">–</span>
+            <label><span class="visually-hidden">Deuxième nombre maximum, multiplication et division</span><input id="multiplicationRightMaximum" name="multiplication_right_maximum" type="number" min="0" max="9999" value="100" inputmode="numeric"></label>
+          </div>
+        </fieldset>
+
+        <div class="settings-actions">
+          <button class="text-button" id="resetClassicButton" type="button">Reset</button>
+          <button class="mode-button mode-button--primary" id="startCustomButton" type="submit">Go</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel game-panel" id="gamePanel" aria-labelledby="gameTitle" hidden>
+      <h2 class="visually-hidden" id="gameTitle">Partie en cours</h2>
       <header class="game-stats">
-        <p>Temps <strong id="timerValue">120</strong></p>
-        <p>Score <strong id="scoreValue">0</strong></p>
+        <p><span class="visually-hidden">Temps restant </span><strong id="timerValue">120</strong><span aria-hidden="true">s</span></p>
+        <p><span class="visually-hidden">Score </span><strong id="scoreValue">0</strong></p>
+        <p class="projected-score" id="projectedScore" aria-live="polite" hidden>≈0</p>
+        <button id="stopButton" type="button" aria-label="Arrêter la séance">■</button>
       </header>
       <p class="problem-text" id="problemText" aria-live="polite"></p>
-      <label class="answer-label" for="answerInput">Ta réponse</label>
+      <label class="visually-hidden" for="answerInput">Réponse</label>
       <input id="answerInput" inputmode="numeric" autocomplete="off" pattern="[0-9]*" disabled>
+      <figure class="response-figure" aria-labelledby="chartTitle">
+        <figcaption class="visually-hidden" id="chartTitle">Temps de réponse</figcaption>
+        <div id="responseChart" aria-hidden="true"></div>
+        <div class="operation-legend" aria-label="Légende des opérations">
+          <span class="operator operator--add">+</span>
+          <span class="operator operator--subtract">−</span>
+          <span class="operator operator--multiply">×</span>
+          <span class="operator operator--divide">÷</span>
+        </div>
+      </figure>
     </section>
 
     <section class="panel result-panel" id="resultPanel" aria-labelledby="resultTitle" hidden>
-      <p class="eyebrow">Temps écoulé</p>
-      <h2 id="resultTitle">Score : <strong id="finalScore">0</strong></h2>
-      <button class="primary-button" id="retryButton" type="button">Rejouer</button>
-      <a class="secondary-link" href="{{ url_for('home') }}">Retour au menu</a>
+      <h2 id="resultTitle"><span class="visually-hidden">Score </span><strong id="finalScore">0</strong></h2>
+      <div class="response-figure response-figure--result" id="resultChart" aria-hidden="true"></div>
+      <dl class="operation-summaries" id="operationSummaries"></dl>
+      <div class="result-actions">
+        <button class="mode-button mode-button--primary" id="retryButton" type="button">Rejouer</button>
+        <button class="text-button" type="button" data-panel="settings">Modifier</button>
+        <button class="text-button" type="button" data-panel="modes">Retour</button>
+      </div>
+    </section>
+
+    <section class="panel scores-panel" id="scoresPanel" aria-labelledby="scoresTitle" hidden>
+      <header class="panel-heading">
+        <h2 id="scoresTitle">Scores</h2>
+        <button class="text-button" type="button" data-panel="modes">Retour</button>
+      </header>
+      <ol class="history-list" id="historyList" aria-live="polite"></ol>
+      <button class="text-button text-button--danger" id="clearHistoryButton" type="button">Effacer</button>
     </section>
   </main>
-  <script src="/static/calculatorx/game.js"></script>
+  <script src="/static/calculatorx/chart.js" defer></script>
+  <script src="/static/calculatorx/game.js" defer></script>
 </body>
 </html>

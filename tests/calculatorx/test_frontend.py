@@ -4,24 +4,39 @@ from pathlib import Path
 ROOT = Path(__file__).parents[2]
 
 
-def test_template_exposes_three_panels_and_external_script():
+def test_template_exposes_v2_panels_and_controls():
     html = (ROOT / "templates/calculatorx/index.html").read_text()
 
     for element_id in (
-        "welcomePanel",
+        "modePanel",
+        "settingsPanel",
         "gamePanel",
         "resultPanel",
-        "startButton",
+        "scoresPanel",
+        "classicButton",
+        "customButton",
+        "constanceButton",
+        "scoresButton",
+        "resetClassicButton",
+        "startCustomButton",
+        "stopButton",
         "retryButton",
+        "clearHistoryButton",
         "answerInput",
         "problemText",
         "timerValue",
         "scoreValue",
-        "finalScore",
-        "errorMessage",
+        "projectedScore",
+        "responseChart",
+        "operationSummaries",
+        "historyList",
     ):
         assert f'id="{element_id}"' in html
-    assert '<script src="/static/calculatorx/game.js"></script>' in html
+    assert 'aria-label="Arrêter la séance"' in html
+    assert ">■<" in html
+    assert '<script src="/static/calculatorx/chart.js" defer></script>' in html
+    assert '<script src="/static/calculatorx/game.js" defer></script>' in html
+    assert html.index('/static/calculatorx/chart.js') < html.index('/static/calculatorx/game.js')
     assert "<script>" not in html
 
 
@@ -52,8 +67,10 @@ def test_enter_shortcut_leaves_interactive_targets_to_native_behavior():
     )
 
 
-def test_styles_include_reduced_motion_fallback():
+def test_game_style_is_speed_oriented_and_reduced_motion_safe():
     css = (ROOT / "static/calculatorx/style.css").read_text()
 
+    assert "font-variant-numeric: tabular-nums" in css
+    assert "#stopButton" in css
     assert "@media (prefers-reduced-motion: reduce)" in css
     assert "animation: none" in css
