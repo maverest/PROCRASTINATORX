@@ -10,13 +10,18 @@ from games.calculatorx.engine import (
     Problem,
     generate_problems,
 )
+from games.calculatorx.storage import CalculatorStorage
 
 BLUEPRINT_NAME = "calculatorx"
 URL_PREFIX = "/games/calculatorx"
 ProblemFactory = Callable[[int], list[Problem]]
 
 
-def build_blueprint(problem_factory: ProblemFactory = generate_problems) -> Blueprint:
+def build_blueprint(
+    problem_factory: ProblemFactory = generate_problems,
+    storage: CalculatorStorage | None = None,
+) -> Blueprint:
+    del storage
     blueprint = Blueprint(BLUEPRINT_NAME, __name__, url_prefix=URL_PREFIX)
 
     @blueprint.get("/")
