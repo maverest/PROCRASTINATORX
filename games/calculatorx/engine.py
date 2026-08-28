@@ -19,6 +19,29 @@ class RandomSource(Protocol):
 
 
 @dataclass(frozen=True, slots=True)
+class NumberRange:
+    minimum: int
+    maximum: int
+
+
+@dataclass(frozen=True, slots=True)
+class GameConfig:
+    mode: str
+    duration_seconds: int
+    operations: tuple[str, ...]
+    addition_left: NumberRange
+    addition_right: NumberRange
+    multiplication_left: NumberRange
+    multiplication_right: NumberRange
+
+
+class ConfigError(ValueError):
+    def __init__(self, message: str, field: str):
+        super().__init__(message)
+        self.field = field
+
+
+@dataclass(frozen=True, slots=True)
 class Problem:
     left: int
     operator: str
@@ -29,25 +52,114 @@ class Problem:
         return asdict(self)
 
 
-def generate_problem(rng: RandomSource) -> Problem:
-    operation = rng.choice(OPERATIONS)
+def classic_config() -> GameConfig:
+    return GameConfig(
+        mode="classic",
+        duration_seconds=DURATION_SECONDS,
+        operations=OPERATIONS,
+        addition_left=NumberRange(2, 100),
+        addition_right=NumberRange(2, 100),
+        multiplication_left=NumberRange(2, 12),
+        multiplication_right=NumberRange(2, 100),
+    )
+
+
+def parse_config(payload: object) -> GameConfig:
+    if not isinstance(payload, dict):
+        raise ConfigError("La configuration doit être un objet.", "config")
+
+    mode = payload.get("mode")
+    if mode == "classic":
+        return classic_config()
+    if mode != "custom":
+        raise ConfigError("Mode inconnu.", "mode")
+
+    duration_seconds = _integer(payload.get("duration_seconds"), "duration_seconds")
+    if not 1 <= duration_seconds <= 3600:
+        raise ConfigError("La durée doit être comprise entre 1 et 3600.", "duration_seconds")
+
+    raw_operations = payload.get("operations")
+    if not isinstance(raw_operations, (list, tuple)) or not raw_operations:
+        raise ConfigError("Choisis au moins une opération.", "operations")
+    if any(operation not in OPERATIONS for operation in raw_operations):
+        raise ConfigError("Opération inconnue.", "operations")
+    if len(set(raw_operations)) != len(raw_operations):
+        raise ConfigError("Chaque opération ne peut être choisie qu'une fois.", "operations")
+    operations = tuple(raw_operations)
+
+    addition = _mapping(payload.get("addition"), "addition")
+    multiplication = _mapping(payload.get("multiplication"), "multiplication")
+    addition_left = _parse_range(addition.get("left"), "addition.left")
+    addition_right = _parse_range(addition.get("right"), "addition.right")
+    multiplication_left = _parse_range(multiplication.get("left"), "multiplication.left")
+    multiplication_right = _parse_range(multiplication.get("right"), "multiplication.right")
+
+    if "÷" in operations and multiplication_left.maximum == 0:
+        raise ConfigError(
+            "Le diviseur doit pouvoir être différent de zéro.", "multiplication.left"
+        )
+
+    return GameConfig(
+        mode="custom",
+        duration_seconds=duration_seconds,
+        operations=operations,
+        addition_left=addition_left,
+        addition_right=addition_right,
+        multiplication_left=multiplication_left,
+        multiplication_right=multiplication_right,
+    )
+
+
+def _mapping(value: object, field: str) -> dict[str, object]:
+    if not isinstance(value, dict):
+        raise ConfigError("Cette valeur doit être un objet.", field)
+    return value
+
+
+def _integer(value: object, field: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ConfigError("Cette valeur doit être un entier.", field)
+    return value
+
+
+def _parse_range(value: object, field: str) -> NumberRange:
+    range_payload = _mapping(value, field)
+    minimum = _integer(range_payload.get("minimum"), f"{field}.minimum")
+    maximum = _integer(range_payload.get("maximum"), f"{field}.maximum")
+    if not 0 <= minimum <= 9999:
+        raise ConfigError("Le minimum doit être compris entre 0 et 9999.", f"{field}.minimum")
+    if not 0 <= maximum <= 9999:
+        raise ConfigError("Le maximum doit être compris entre 0 et 9999.", f"{field}.maximum")
+    if minimum > maximum:
+        raise ConfigError("Le minimum ne peut pas dépasser le maximum.", field)
+    return NumberRange(minimum, maximum)
+
+
+def generate_problem(config: GameConfig, rng: RandomSource) -> Problem:
+    operation = rng.choice(config.operations)
     if operation in ("+", "−"):
-        first = rng.randint(2, 100)
-        second = rng.randint(2, 100)
+        first = _draw(config.addition_left, rng)
+        second = _draw(config.addition_right, rng)
         if operation == "+":
             return Problem(first, operation, second, first + second)
         return Problem(first + second, operation, first, second)
 
-    small = rng.randint(2, 12)
-    large = rng.randint(2, 100)
+    first = _draw(config.multiplication_left, rng, nonzero=operation == "÷")
+    second = _draw(config.multiplication_right, rng)
     if operation == "×":
-        return Problem(small, operation, large, small * large)
-    return Problem(small * large, operation, small, large)
+        return Problem(first, operation, second, first * second)
+    return Problem(first * second, operation, first, second)
+
+
+def _draw(number_range: NumberRange, rng: RandomSource, *, nonzero: bool = False) -> int:
+    minimum = max(1, number_range.minimum) if nonzero else number_range.minimum
+    return rng.randint(minimum, number_range.maximum)
 
 
 def generate_problems(
+    config: GameConfig,
     count: int = PROBLEM_COUNT,
     rng: RandomSource | None = None,
 ) -> list[Problem]:
     source = rng if rng is not None else random.SystemRandom()
-    return [generate_problem(source) for _ in range(count)]
+    return [generate_problem(config, source) for _ in range(count)]
