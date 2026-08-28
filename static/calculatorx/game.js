@@ -43,6 +43,7 @@
     resultChart: document.getElementById('resultChart'),
     operationSummaries: document.getElementById('operationSummaries'),
     error: document.getElementById('errorMessage'),
+    resultError: document.getElementById('resultError'),
   };
 
   const state = {
@@ -154,14 +155,32 @@
     });
   }
 
+  function cancelPreparation() {
+    if (!state.preparing) return;
+    ++state.roundToken;
+    setPreparing(false);
+  }
+
+  function navigateToPanel(panel) {
+    cancelPreparation();
+    showPanel(panel);
+  }
+
   function clearError() {
-    ui.error.hidden = true;
-    ui.error.textContent = '';
+    [ui.error, ui.resultError].forEach((error) => {
+      error.hidden = true;
+      error.textContent = '';
+    });
   }
 
   function showError(message) {
     ui.error.textContent = message;
     ui.error.hidden = false;
+  }
+
+  function showResultError(message) {
+    ui.resultError.textContent = message;
+    ui.resultError.hidden = false;
   }
 
   function numberFrom(input) {
@@ -285,6 +304,8 @@
     if (reason === 'timeout') ui.timer.textContent = '0';
     ui.finalScore.textContent = String(state.score);
     ui.retry.disabled = true;
+    ui.resultError.hidden = true;
+    ui.resultError.textContent = '';
     window.CalculatorXChart.render(ui.resultChart, state.samples, {});
     renderSummaries({});
     showPanel(ui.result);
@@ -310,7 +331,7 @@
       state.lastResult.response = payload;
       renderSummaries(payload.statistics);
     } catch (_error) {
-      if (token === state.roundToken) showError('Score local indisponible.');
+      if (token === state.roundToken) showResultError('Score non enregistré.');
     } finally {
       if (token === state.roundToken) {
         state.finishing = false;
@@ -430,10 +451,10 @@
   ui.constanceButton.addEventListener('click', () => selectMode('constance'));
   ui.customButton.addEventListener('click', () => {
     clearError();
-    showPanel(ui.settings);
+    navigateToPanel(ui.settings);
     ui.customDuration.focus();
   });
-  ui.scoresButton.addEventListener('click', () => showPanel(ui.scores));
+  ui.scoresButton.addEventListener('click', () => navigateToPanel(ui.scores));
   ui.resetClassicButton.addEventListener('click', () => applyConfigToForm(classicCustomConfig()));
   ui.customForm.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -456,11 +477,11 @@
           ? state.config
           : classicCustomConfig();
         applyConfigToForm(config);
-        showPanel(ui.settings);
+        navigateToPanel(ui.settings);
         ui.customDuration.focus();
         return;
       }
-      showPanel(ui.mode);
+      navigateToPanel(ui.mode);
       ui.classicButton.focus();
     });
   });

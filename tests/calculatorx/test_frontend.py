@@ -31,6 +31,7 @@ def test_template_exposes_v2_panels_and_controls():
         "projectedScore",
         "responseChart",
         "operationSummaries",
+        "resultError",
         "historyList",
     ):
         assert f'id="{element_id}"' in html
@@ -85,6 +86,36 @@ def test_chart_has_sliding_live_window_and_operation_palette():
     assert "samples.slice(-limit)" in script
     for operator in ("+", "−", "×", "÷"):
         assert repr(operator) in script or f"'{operator}'" in script
+
+
+def test_panel_navigation_invalidates_a_pending_session_request():
+    script = GAME_SCRIPT.read_text()
+    cancel_handler = script[
+        script.index("function cancelPreparation()") : script.index(
+            "function navigateToPanel"
+        )
+    ]
+    navigation_handler = script[
+        script.index("function navigateToPanel") : script.index(
+            "function clearError"
+        )
+    ]
+
+    assert "++state.roundToken" in cancel_handler
+    assert "setPreparing(false)" in cancel_handler
+    assert navigation_handler.index("cancelPreparation();") < navigation_handler.index(
+        "showPanel(panel);"
+    )
+
+
+def test_result_submission_error_is_rendered_inside_result_panel():
+    html = (ROOT / "templates/calculatorx/index.html").read_text()
+    script = GAME_SCRIPT.read_text()
+    result_panel = html[html.index('id="resultPanel"') : html.index('id="scoresPanel"')]
+
+    assert 'id="resultError"' in result_panel
+    assert 'role="alert"' in result_panel
+    assert "ui.resultError.textContent" in script
 
 
 def test_game_style_is_speed_oriented_and_reduced_motion_safe():
