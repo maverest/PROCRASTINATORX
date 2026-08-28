@@ -126,6 +126,22 @@ def test_scores_screen_loads_and_clears_local_history():
     assert "window.confirm" in script
 
 
+def test_successful_history_delete_invalidates_all_predelete_reads():
+    script = GAME_SCRIPT.read_text()
+    load_history = script[
+        script.index("async function loadHistory()") : script.index("async function clearHistory()")
+    ]
+    clear_history = script[
+        script.index("async function clearHistory()") : script.index("function numberFrom")
+    ]
+
+    assert "historyGeneration: 0" in script
+    assert "const generation = state.historyGeneration;" in load_history
+    assert "generation !== state.historyGeneration" in load_history
+    assert "++state.historyGeneration;" in clear_history
+    assert "if (!ui.scores.hidden) loadHistory();" in clear_history
+
+
 def test_scores_screen_exposes_an_accessible_history_error():
     html = (ROOT / "templates/calculatorx/index.html").read_text()
     scores_panel = html[html.index('id="scoresPanel"') : html.index("</section>", html.index('id="scoresPanel"'))]

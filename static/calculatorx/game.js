@@ -68,6 +68,7 @@
     endedReason: null,
     lastResult: null,
     historyToken: 0,
+    historyGeneration: 0,
   };
 
   function classicCustomConfig() {
@@ -262,6 +263,7 @@
 
   async function loadHistory() {
     const token = ++state.historyToken;
+    const generation = state.historyGeneration;
     clearHistoryError();
     ui.historyList.setAttribute('aria-busy', 'true');
     try {
@@ -271,10 +273,18 @@
       if (!payload || !Array.isArray(payload.sessions) || !payload.sessions.every(isHistorySession)) {
         throw new Error('invalid history');
       }
-      if (token !== state.historyToken || ui.scores.hidden) return;
+      if (
+        token !== state.historyToken
+        || generation !== state.historyGeneration
+        || ui.scores.hidden
+      ) return;
       renderHistory(payload.sessions);
     } catch (_error) {
-      if (token === state.historyToken && !ui.scores.hidden) {
+      if (
+        token === state.historyToken
+        && generation === state.historyGeneration
+        && !ui.scores.hidden
+      ) {
         showHistoryError('Historique indisponible.');
       }
     } finally {
@@ -291,7 +301,8 @@
     try {
       const response = await fetch('/games/calculatorx/history', {method: 'DELETE'});
       if (!response.ok) throw new Error('history unavailable');
-      if (token === state.historyToken && !ui.scores.hidden) loadHistory();
+      ++state.historyGeneration;
+      if (!ui.scores.hidden) loadHistory();
     } catch (_error) {
       if (token === state.historyToken && !ui.scores.hidden) {
         showHistoryError('Effacement impossible.');
