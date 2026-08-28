@@ -2,6 +2,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).parents[2]
+GAME_SCRIPT = ROOT / "static/calculatorx/game.js"
+CHART_SCRIPT = ROOT / "static/calculatorx/chart.js"
 
 
 def test_template_exposes_v2_panels_and_controls():
@@ -41,7 +43,7 @@ def test_template_exposes_v2_panels_and_controls():
 
 
 def test_game_script_uses_absolute_deadline_and_round_token():
-    script = (ROOT / "static/calculatorx/game.js").read_text()
+    script = GAME_SCRIPT.read_text()
 
     assert "performance.now()" in script
     assert "deadline" in script
@@ -51,7 +53,7 @@ def test_game_script_uses_absolute_deadline_and_round_token():
 
 
 def test_enter_shortcut_leaves_interactive_targets_to_native_behavior():
-    script = (ROOT / "static/calculatorx/game.js").read_text()
+    script = GAME_SCRIPT.read_text()
     keydown_handler = script[script.index("document.addEventListener('keydown'") :]
     interactive_guard = (
         "if (event.target.closest('a, button, input, select, textarea, "
@@ -65,6 +67,24 @@ def test_enter_shortcut_leaves_interactive_targets_to_native_behavior():
     assert keydown_handler.index(interactive_guard) < keydown_handler.index(
         "prepareRound();"
     )
+
+
+def test_script_tracks_per_problem_time_and_manual_stop():
+    script = GAME_SCRIPT.read_text()
+
+    assert "problemStartedAt" in script
+    assert "elapsed_ms" in script
+    assert "projectedScore" in script
+    assert "stopButton.addEventListener" in script
+    assert "ended_reason" in script
+
+
+def test_chart_has_sliding_live_window_and_operation_palette():
+    script = CHART_SCRIPT.read_text()
+
+    assert "samples.slice(-limit)" in script
+    for operator in ("+", "−", "×", "÷"):
+        assert repr(operator) in script or f"'{operator}'" in script
 
 
 def test_game_style_is_speed_oriented_and_reduced_motion_safe():
