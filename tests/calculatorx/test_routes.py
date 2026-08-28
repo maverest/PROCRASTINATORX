@@ -150,6 +150,16 @@ def test_result_rejects_invalid_sample_with_field_error(client):
     assert response.get_json()["field"] == "samples"
 
 
+def test_result_rejects_a_score_above_the_leaderboard_limit(client):
+    payload = result_payload()
+    payload["score"] = 10_000
+
+    response = client.post("/games/calculatorx/result", json=payload)
+
+    assert response.status_code == 400
+    assert response.get_json()["field"] == "score"
+
+
 def test_history_excludes_samples_and_can_be_cleared(client):
     client.post("/games/calculatorx/result", json=result_payload())
 

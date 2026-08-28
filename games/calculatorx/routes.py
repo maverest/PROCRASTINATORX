@@ -133,7 +133,7 @@ def _parse_result() -> ResultData:
     duration_seconds = _required_integer(payload, "duration_seconds", minimum=1, maximum=3600)
     if mode in ("classic", "constance") and duration_seconds != DURATION_SECONDS:
         raise RequestError("Ce mode dure 120 secondes.", "duration_seconds")
-    score = _required_integer(payload, "score", minimum=0)
+    score = _required_integer(payload, "score", minimum=0, maximum=9999)
     ended_reason = _required_choice(payload, "ended_reason", VALID_ENDED_REASONS)
     raw_samples = payload.get("samples")
     if not isinstance(raw_samples, list):
