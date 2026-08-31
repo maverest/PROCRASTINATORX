@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import sqlite3
+import threading
 from datetime import datetime, timezone
 
 import pytest
 
+from games.calculatorx import storage as storage_module
 from games.calculatorx.storage import CalculatorStorage, StorageError
 from games.calculatorx import build_game
 
@@ -135,20 +137,103 @@ def test_get_session_returns_summary_and_rejects_unknown_identifier(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("mode", "duration_seconds"),
-    [("classic", 120), ("constance", 120)],
+    ("mode", "duration_seconds", "ended_reason"),
+    [
+        ("classic", 120, "timeout"),
+        ("classic", 120, "exhausted"),
+        ("constance", 120, "timeout"),
+        ("constance", 120, "exhausted"),
+    ],
 )
-def test_mark_submitted_accepts_pending_ranked_sessions(tmp_path, mode, duration_seconds):
+def test_mark_submitted_accepts_pending_ranked_sessions(
+    tmp_path, mode, duration_seconds, ended_reason
+):
     storage = CalculatorStorage(tmp_path / "calculatorx.sqlite3")
     profile = storage.create_profile("Mila")
     session = storage.record_session(
-        mode, duration_seconds, 42, "timeout", "pending"
+        mode, duration_seconds, 42, ended_reason, "pending"
     )
 
     submitted = storage.mark_submitted(session.id, "MILA")
 
     assert submitted.submission_status == "submitted"
     assert submitted.nickname == profile.nickname
+
+
+def test_mark_submitted_allows_exactly_one_concurrent_claim(tmp_path, monkeypatch):
+    database_path = tmp_path / "calculatorx.sqlite3"
+    storage = CalculatorStorage(database_path)
+    profile = storage.create_profile("Mila")
+    session = storage.record_session("classic", 120, 42, "timeout", "pending")
+    synchronized_read = threading.Barrier(2)
+    original_eligible = CalculatorStorage._is_submission_eligible
+    outcomes: list[object] = []
+
+    def wait_after_read(candidate):
+        synchronized_read.wait(timeout=5)
+        return original_eligible(candidate)
+
+    def claim() -> None:
+        try:
+            outcomes.append(
+                CalculatorStorage(database_path).mark_submitted(session.id, profile.nickname)
+            )
+        except StorageError as error:
+            outcomes.append(error)
+
+    monkeypatch.setattr(
+        CalculatorStorage,
+        "_is_submission_eligible",
+        staticmethod(wait_after_read),
+    )
+    workers = [threading.Thread(target=claim) for _ in range(2)]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join(timeout=10)
+
+    assert not any(worker.is_alive() for worker in workers)
+    assert sum(isinstance(outcome, StorageError) for outcome in outcomes) == 1
+    assert sum(not isinstance(outcome, StorageError) for outcome in outcomes) == 1
+    assert storage.get_session(session.id).submission_status == "submitted"
+
+
+def test_concurrent_profile_creation_reuses_one_profile_without_error(tmp_path, monkeypatch):
+    database_path = tmp_path / "calculatorx.sqlite3"
+    storage = CalculatorStorage(database_path)
+    assert storage.list_profiles() == []
+    synchronized_insert = threading.Barrier(2)
+    original_uuid4 = storage_module.uuid4
+    outcomes: list[object] = []
+
+    def wait_before_insert():
+        synchronized_insert.wait(timeout=5)
+        return original_uuid4()
+
+    def create(nickname: str) -> None:
+        try:
+            outcomes.append(CalculatorStorage(database_path).create_profile(nickname))
+        except Exception as error:  # The contract requires no error from either thread.
+            outcomes.append(error)
+
+    monkeypatch.setattr(storage_module, "uuid4", wait_before_insert)
+    workers = [
+        threading.Thread(target=create, args=("Ada",)),
+        threading.Thread(target=create, args=("ADA",)),
+    ]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join(timeout=10)
+
+    assert not any(worker.is_alive() for worker in workers)
+    assert len(outcomes) == 2
+    assert not any(isinstance(outcome, Exception) for outcome in outcomes)
+    assert outcomes[0].id == outcomes[1].id
+    profiles = storage.list_profiles()
+    assert len(profiles) == 1
+    assert profiles[0].normalized_nickname == "ada"
+    assert profiles[0].nickname in {"Ada", "ADA"}
 
 
 @pytest.mark.parametrize(

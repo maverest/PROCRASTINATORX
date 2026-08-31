@@ -97,30 +97,16 @@ class CalculatorStorage:
 
         def create(connection: sqlite3.Connection) -> Profile:
             row = connection.execute(
-                "SELECT * FROM calculator_profiles WHERE normalized_nickname = ?",
-                (normalized_name,),
+                """
+                INSERT INTO calculator_profiles (
+                  id, nickname, normalized_nickname, created_at, last_used_at
+                ) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(normalized_nickname) DO UPDATE SET
+                  last_used_at = excluded.last_used_at
+                RETURNING *
+                """,
+                (str(uuid4()), display_name, normalized_name, used_at, used_at),
             ).fetchone()
-            if row is None:
-                profile_id = str(uuid4())
-                connection.execute(
-                    """
-                    INSERT INTO calculator_profiles (
-                      id, nickname, normalized_nickname, created_at, last_used_at
-                    ) VALUES (?, ?, ?, ?, ?)
-                    """,
-                    (profile_id, display_name, normalized_name, used_at, used_at),
-                )
-                row = connection.execute(
-                    "SELECT * FROM calculator_profiles WHERE id = ?", (profile_id,)
-                ).fetchone()
-            else:
-                connection.execute(
-                    "UPDATE calculator_profiles SET last_used_at = ? WHERE id = ?",
-                    (used_at, row["id"]),
-                )
-                row = connection.execute(
-                    "SELECT * FROM calculator_profiles WHERE id = ?", (row["id"],)
-                ).fetchone()
             return self._profile_from_row(row)
 
         return self._run(create)
@@ -169,14 +155,20 @@ class CalculatorStorage:
             if profile_row is None:
                 raise StorageError("Profil introuvable.")
 
-            connection.execute(
+            cursor = connection.execute(
                 """
                 UPDATE calculator_sessions
                 SET submission_status = 'submitted', nickname = ?
                 WHERE id = ?
+                  AND submission_status = 'pending'
+                  AND mode IN ('classic', 'constance')
+                  AND duration_seconds = 120
+                  AND ended_reason IN ('timeout', 'exhausted')
                 """,
                 (profile_row["nickname"], session_id),
             )
+            if cursor.rowcount != 1:
+                raise StorageError("Cette séance ne peut pas être envoyée.")
             connection.execute(
                 "UPDATE calculator_profiles SET last_used_at = ? WHERE id = ?",
                 (used_at, profile_row["id"]),
@@ -277,7 +269,7 @@ class CalculatorStorage:
             session.submission_status == "pending"
             and session.mode in {"classic", "constance"}
             and session.duration_seconds == 120
-            and session.ended_reason == "timeout"
+            and session.ended_reason in {"timeout", "exhausted"}
         )
 
     @staticmethod
