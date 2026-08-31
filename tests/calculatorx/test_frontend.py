@@ -138,6 +138,22 @@ def test_result_summary_renders_zero_count_entries_for_enabled_operations():
     assert "count: 0" in script
 
 
+def test_history_score_validation_uses_the_mode_specific_reserve_limit():
+    script = GAME_SCRIPT.read_text()
+
+    assert "function historyScoreLimit" in script
+    assert "Math.ceil(512 * session.duration_seconds / 120)" in script
+    assert "isIntegerInRange(session.score, 0, historyScoreLimit(session))" in script
+
+
+def test_unstructured_session_errors_use_the_french_fallback_message():
+    script = GAME_SCRIPT.read_text()
+    catch_handler = script[script.index(".catch((error) => {") : script.index("  function selectMode")]
+
+    assert "error instanceof SessionError" in catch_handler
+    assert "Impossible de préparer la partie." in catch_handler
+
+
 def test_scores_screen_loads_and_clears_local_history():
     script = GAME_SCRIPT.read_text()
 

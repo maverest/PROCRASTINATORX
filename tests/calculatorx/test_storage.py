@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sqlite3
+
 import pytest
 
 from games.calculatorx.storage import CalculatorStorage, StorageError
@@ -72,3 +74,37 @@ def test_storage_constructor_defers_all_database_io_until_a_public_operation(tmp
 
     with pytest.raises(StorageError):
         storage.list_sessions()
+
+
+class TrackedConnection:
+    def __init__(self, *, failing: bool = False):
+        self.closed = False
+        self.failing = failing
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_details):
+        return False
+
+    def execute(self, _query):
+        if self.failing:
+            raise sqlite3.DatabaseError("test database failure")
+
+    def close(self):
+        self.closed = True
+
+
+@pytest.mark.parametrize("failing", [False, True])
+def test_storage_closes_each_connection_after_success_or_database_failure(tmp_path, monkeypatch, failing):
+    connection = TrackedConnection(failing=failing)
+    storage = CalculatorStorage(tmp_path / "calculatorx.sqlite3")
+    monkeypatch.setattr(storage, "_connect", lambda: connection)
+
+    if failing:
+        with pytest.raises(StorageError):
+            storage.clear_sessions()
+    else:
+        storage.clear_sessions()
+
+    assert connection.closed is True

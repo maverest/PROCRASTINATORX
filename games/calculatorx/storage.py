@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -95,7 +96,7 @@ class CalculatorStorage:
     def _run(self, operation):
         try:
             self.database_path.parent.mkdir(parents=True, exist_ok=True)
-            with self._connect() as connection:
+            with closing(self._connect()) as connection, connection:
                 self._initialize(connection)
                 return operation(connection)
         except (OSError, sqlite3.Error) as error:

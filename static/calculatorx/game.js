@@ -242,10 +242,16 @@
       && typeof session.played_at === 'string'
       && ['classic', 'custom', 'constance'].includes(session.mode)
       && isIntegerInRange(session.duration_seconds, 1, 3600)
-      && isIntegerInRange(session.score, 0, 9999)
+      && isIntegerInRange(session.score, 0, historyScoreLimit(session))
       && ['timeout', 'stopped', 'exhausted'].includes(session.ended_reason)
       && ['not_applicable', 'pending', 'submitted'].includes(session.submission_status)
       && (session.nickname === null || typeof session.nickname === 'string');
+  }
+
+  function historyScoreLimit(session) {
+    return session.mode === 'custom'
+      ? Math.max(512, Math.ceil(512 * session.duration_seconds / 120))
+      : 9999;
   }
 
   function formatHistoryDate(playedAt) {
@@ -635,7 +641,12 @@
         if (!isSession(payload)) throw new Error('invalid session');
         beginRound(payload, token);
       })
-      .catch((error) => showPreparationError(token, error.message, error.field));
+      .catch((error) => {
+        const sessionError = error instanceof SessionError
+          ? error
+          : new SessionError('Impossible de préparer la partie.');
+        showPreparationError(token, sessionError.message, sessionError.field);
+      });
   }
 
   function selectMode(mode) {

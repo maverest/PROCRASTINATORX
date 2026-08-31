@@ -152,6 +152,7 @@ def test_custom_result_is_not_leaderboard_eligible(client):
 
 def test_result_rejects_invalid_sample_with_field_error(client):
     payload = result_payload()
+    payload["score"] = 1
     payload["samples"] = [{"operator": "+", "elapsed_ms": -1}]
 
     response = client.post("/games/calculatorx/result", json=payload)
@@ -160,9 +161,43 @@ def test_result_rejects_invalid_sample_with_field_error(client):
     assert response.get_json()["field"] == "samples"
 
 
-def test_result_rejects_a_score_above_the_leaderboard_limit(client):
+@pytest.mark.parametrize("mode", ["classic", "constance"])
+def test_eligible_results_reject_a_score_above_the_leaderboard_limit(client, mode):
     payload = result_payload()
+    payload["mode"] = mode
     payload["score"] = 10_000
+
+    response = client.post("/games/calculatorx/result", json=payload)
+
+    assert response.status_code == 400
+    assert response.get_json()["field"] == "score"
+
+
+def test_custom_result_accepts_a_score_at_its_reserve_limit(client):
+    duration_seconds = 2344
+    score = 10_002
+    payload = {
+        "mode": "custom",
+        "duration_seconds": duration_seconds,
+        "score": score,
+        "ended_reason": "stopped",
+        "samples": [{"operator": "+", "elapsed_ms": 1000}] * score,
+    }
+
+    response = client.post("/games/calculatorx/result", json=payload)
+
+    assert response.status_code == 200
+    assert response.get_json()["session"]["score"] == score
+
+
+def test_custom_result_rejects_a_score_above_its_reserve_limit(client):
+    payload = {
+        "mode": "custom",
+        "duration_seconds": 1,
+        "score": 513,
+        "ended_reason": "stopped",
+        "samples": [],
+    }
 
     response = client.post("/games/calculatorx/result", json=payload)
 
