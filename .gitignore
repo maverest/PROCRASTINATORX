@@ -11,3 +11,5 @@ dist/
 .superpowers/
 .worktrees/
 .DS_Store
+
+leaderboard/node_modules/
