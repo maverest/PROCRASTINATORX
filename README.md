@@ -10,7 +10,7 @@ Une petite application macOS regroupant des mini-jeux. Le premier est
 ```bash
 git clone https://github.com/maverest/Orquantix.git
 cd Orquantix
-python3.12 -m venv .venv    # à défaut, python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python main.py
@@ -54,8 +54,12 @@ créée.
 
 ```bash
 source .venv/bin/activate
-python -m pytest
+python -m pytest -rs
 ```
+
+La suite doit se terminer avec **0 skipped** : un test ignoré signale que les
+ressources réelles d’Orquantix ne sont pas disponibles et doit être résolu
+avant de considérer la vérification comme réussie.
 
 ## Orquantix
 
