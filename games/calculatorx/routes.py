@@ -129,7 +129,7 @@ def build_blueprint(
     @blueprint.get("/leaderboards/<mode>")
     def leaderboard_scores(mode: str):
         if mode not in ("classic", "constance"):
-            return ("", 404)
+            return jsonify(error="Classement inconnu."), 404
         try:
             scores = leaderboard.list_scores(mode)
         except LeaderboardUnavailable:

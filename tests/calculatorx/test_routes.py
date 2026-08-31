@@ -425,7 +425,15 @@ def test_local_mark_failure_after_remote_success_leaves_session_retryable(
 
 def test_local_boards_only_allow_the_two_ranked_modes(leaderboard_context):
     client, _storage, remote = leaderboard_context
-    remote.scores["classic"] = [{"rank": 1, "nickname": "Ada", "score": 73, "achieved_at": "2026-08-31T10:00:00Z"}]
+    remote.scores["classic"] = [
+        {"rank": 1, "nickname": "Ada", "score": 73, "achieved_at": "2026-08-31T10:00:00Z"}
+    ]
 
-    assert client.get("/games/calculatorx/leaderboards/classic").get_json()["scores"][0]["score"] == 73
-    assert client.get("/games/calculatorx/leaderboards/custom").status_code == 404
+    assert (
+        client.get("/games/calculatorx/leaderboards/classic").get_json()["scores"][0]["score"]
+        == 73
+    )
+    invalid = client.get("/games/calculatorx/leaderboards/custom")
+    assert invalid.status_code == 404
+    assert invalid.is_json
+    assert invalid.get_json() == {"error": "Classement inconnu."}
