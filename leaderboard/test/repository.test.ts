@@ -52,3 +52,9 @@ it('defaults to 100 records and never returns more than 100 records', async () =
   expect(await repository.list('classic', 101)).toHaveLength(100);
   expect(await repository.list('classic')).toHaveLength(100);
 });
+
+it('returns no records when the requested limit is negative', async () => {
+  await repository.submit('classic', 'Ada', 73, '2026-08-28T10:00:00Z');
+
+  expect(await repository.list('classic', -1)).toEqual([]);
+});

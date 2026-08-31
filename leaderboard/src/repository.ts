@@ -29,7 +29,7 @@ export class ScoreRepository {
 
   async list(mode: ScoreMode, limit = MAX_LIST_SIZE): Promise<ScoreRecord[]> {
     assertMode(mode);
-    const safeLimit = Math.min(limit, MAX_LIST_SIZE);
+    const safeLimit = Math.max(0, Math.min(limit, MAX_LIST_SIZE));
     const {results} = await this.database
       .prepare(`
         SELECT nickname, score, achieved_at
