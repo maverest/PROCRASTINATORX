@@ -46,9 +46,22 @@
     error: document.getElementById('errorMessage'),
     settingsError: document.getElementById('settingsError'),
     resultError: document.getElementById('resultError'),
+    submitScoreButton: document.getElementById('submitScoreButton'),
     historyList: document.getElementById('historyList'),
     historyError: document.getElementById('historyError'),
     clearHistoryButton: document.getElementById('clearHistoryButton'),
+    classicLeaderboardTab: document.getElementById('classicLeaderboardTab'),
+    constanceLeaderboardTab: document.getElementById('constanceLeaderboardTab'),
+    classicLeaderboard: document.getElementById('classicLeaderboard'),
+    constanceLeaderboard: document.getElementById('constanceLeaderboard'),
+    leaderboardError: document.getElementById('leaderboardError'),
+    profilePicker: document.getElementById('profilePicker'),
+    profileList: document.getElementById('profileList'),
+    profileForm: document.getElementById('profileForm'),
+    newProfileInput: document.getElementById('newProfileInput'),
+    createProfileButton: document.getElementById('createProfileButton'),
+    profileCancelButton: document.getElementById('profileCancelButton'),
+    profileError: document.getElementById('profileError'),
   };
 
   const state = {
@@ -71,6 +84,14 @@
     lastResult: null,
     historyToken: 0,
     historyGeneration: 0,
+    leaderboardMode: 'classic',
+    leaderboardTokens: {classic: 0, constance: 0},
+    profilePickerToken: 0,
+    profilePickerTrigger: null,
+    pendingSubmissionSessionId: null,
+    pendingSubmissionMode: null,
+    profileCreateInFlight: false,
+    submissionInFlight: false,
   };
 
   function classicCustomConfig() {
@@ -170,9 +191,13 @@
 
   function navigateToPanel(panel) {
     cancelPreparation();
+    closeProfilePicker({restoreFocus: false});
     ++state.historyToken;
     showPanel(panel);
-    if (panel === ui.scores) loadHistory();
+    if (panel === ui.scores) {
+      loadHistory();
+      selectLeaderboard(state.leaderboardMode);
+    }
   }
 
   function clearError() {
@@ -236,6 +261,26 @@
     ui.historyError.hidden = false;
   }
 
+  function clearLeaderboardError() {
+    ui.leaderboardError.hidden = true;
+    ui.leaderboardError.textContent = '';
+  }
+
+  function showLeaderboardError(message) {
+    ui.leaderboardError.textContent = message;
+    ui.leaderboardError.hidden = false;
+  }
+
+  function clearProfileError() {
+    ui.profileError.hidden = true;
+    ui.profileError.textContent = '';
+  }
+
+  function showProfileError(message) {
+    ui.profileError.textContent = message;
+    ui.profileError.hidden = false;
+  }
+
   function isHistorySession(session) {
     return session
       && Number.isInteger(session.id)
@@ -252,6 +297,236 @@
     return session.mode === 'custom'
       ? Math.max(512, Math.ceil(512 * session.duration_seconds / 120))
       : 9999;
+  }
+
+  function isPendingEligibleSession(session) {
+    return isHistorySession(session)
+      && session.submission_status === 'pending'
+      && ['classic', 'constance'].includes(session.mode)
+      && session.duration_seconds === 120
+      && ['timeout', 'exhausted'].includes(session.ended_reason);
+  }
+
+  function isProfile(profile) {
+    return profile
+      && typeof profile.id === 'string'
+      && typeof profile.nickname === 'string'
+      && profile.nickname.length > 0;
+  }
+
+  function isLeaderboardScore(score) {
+    return score
+      && isIntegerInRange(score.rank, 1, 999999)
+      && typeof score.nickname === 'string'
+      && isIntegerInRange(score.score, 0, 9999);
+  }
+
+  function renderResultSubmission(response) {
+    const session = response?.session;
+    const eligible = response?.leaderboard_eligible === true && isPendingEligibleSession(session);
+    ui.submitScoreButton.hidden = !eligible;
+  }
+
+  function profilePickerFocusable() {
+    return Array.from(
+      ui.profilePicker.querySelectorAll('button:not([disabled]), input:not([disabled])'),
+    ).filter((element) => !element.hidden);
+  }
+
+  function setProfilePickerBusy(busy) {
+    ui.profilePicker.setAttribute('aria-busy', String(busy));
+    ui.profileCancelButton.disabled = busy;
+    ui.newProfileInput.disabled = busy;
+    ui.createProfileButton.disabled = busy;
+    ui.profileList.querySelectorAll('button').forEach((button) => {
+      button.disabled = busy;
+    });
+  }
+
+  function closeProfilePicker({restoreFocus = true} = {}) {
+    if (ui.profilePicker.hidden) return;
+    ++state.profilePickerToken;
+    ui.profilePicker.hidden = true;
+    state.pendingSubmissionSessionId = null;
+    state.pendingSubmissionMode = null;
+    state.profileCreateInFlight = false;
+    state.submissionInFlight = false;
+    setProfilePickerBusy(false);
+    const trigger = state.profilePickerTrigger;
+    state.profilePickerTrigger = null;
+    if (restoreFocus && trigger && trigger.isConnected && !trigger.hidden && !trigger.disabled) {
+      trigger.focus();
+    }
+  }
+
+  function renderProfiles(profiles, token) {
+    if (token !== state.profilePickerToken || ui.profilePicker.hidden) return;
+    ui.profileList.replaceChildren();
+    profiles.forEach((profile) => {
+      const button = document.createElement('button');
+      button.className = 'profile-button';
+      button.type = 'button';
+      button.textContent = profile.nickname;
+      button.addEventListener('click', () => submitPendingScore(profile.id));
+      ui.profileList.append(button);
+    });
+  }
+
+  async function openProfilePicker(session, trigger) {
+    if (!isPendingEligibleSession(session) || state.submissionInFlight) return;
+    const token = ++state.profilePickerToken;
+    state.pendingSubmissionSessionId = session.id;
+    state.pendingSubmissionMode = session.mode;
+    state.profilePickerTrigger = trigger;
+    state.profileCreateInFlight = false;
+    clearProfileError();
+    ui.newProfileInput.value = '';
+    ui.profileList.replaceChildren();
+    ui.profilePicker.hidden = false;
+    setProfilePickerBusy(true);
+    try {
+      const response = await fetch('/games/calculatorx/profiles');
+      if (!response.ok) throw new Error('profiles unavailable');
+      const payload = await response.json();
+      if (!payload || !Array.isArray(payload.profiles) || !payload.profiles.every(isProfile)) {
+        throw new Error('invalid profiles');
+      }
+      renderProfiles(payload.profiles, token);
+      if (token !== state.profilePickerToken || ui.profilePicker.hidden) return;
+      setProfilePickerBusy(false);
+      ui.newProfileInput.focus();
+    } catch (_error) {
+      if (token !== state.profilePickerToken || ui.profilePicker.hidden) return;
+      setProfilePickerBusy(false);
+      showProfileError('Profils indisponibles.');
+      ui.profileCancelButton.focus();
+    }
+  }
+
+  async function submitPendingScore(profileId) {
+    if (!state.pendingSubmissionSessionId || state.submissionInFlight || !profileId) return;
+    const sessionId = state.pendingSubmissionSessionId;
+    const mode = state.pendingSubmissionMode;
+    const token = state.profilePickerToken;
+    state.submissionInFlight = true;
+    clearProfileError();
+    setProfilePickerBusy(true);
+    try {
+      const response = await fetch('/games/calculatorx/leaderboard/submit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({session_id: state.pendingSubmissionSessionId, profile_id: profileId}),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload || !isHistorySession(payload.session)
+        || payload.session.id !== sessionId || payload.session.submission_status !== 'submitted') {
+        throw new Error(typeof payload?.error === 'string' ? payload.error : 'submit unavailable');
+      }
+      if (token !== state.profilePickerToken || ui.profilePicker.hidden) return;
+      if (state.lastResult?.response?.session?.id === sessionId) {
+        state.lastResult.response.session = payload.session;
+        renderResultSubmission(state.lastResult.response);
+      }
+      ++state.historyGeneration;
+      closeProfilePicker({restoreFocus: false});
+      if (!ui.scores.hidden) loadHistory();
+      if (mode) loadLeaderboard(mode);
+    } catch (error) {
+      if (token === state.profilePickerToken && !ui.profilePicker.hidden) {
+        showProfileError(error.message || 'Envoi impossible.');
+      }
+    } finally {
+      if (token === state.profilePickerToken && !ui.profilePicker.hidden) {
+        state.submissionInFlight = false;
+        setProfilePickerBusy(false);
+      }
+    }
+  }
+
+  async function createAndSubmitProfile() {
+    if (state.profileCreateInFlight || state.submissionInFlight) return;
+    const nickname = ui.newProfileInput.value.trim();
+    if (!nickname) {
+      showProfileError('Pseudo requis.');
+      ui.newProfileInput.focus();
+      return;
+    }
+    const token = state.profilePickerToken;
+    state.profileCreateInFlight = true;
+    clearProfileError();
+    setProfilePickerBusy(true);
+    try {
+      const response = await fetch('/games/calculatorx/profiles', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({nickname}),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload || !isProfile(payload.profile)) {
+        throw new Error(typeof payload?.error === 'string' ? payload.error : 'profile unavailable');
+      }
+      if (token !== state.profilePickerToken || ui.profilePicker.hidden) return;
+      state.profileCreateInFlight = false;
+      state.submissionInFlight = false;
+      setProfilePickerBusy(false);
+      await submitPendingScore(payload.profile.id);
+    } catch (error) {
+      if (token === state.profilePickerToken && !ui.profilePicker.hidden) {
+        state.profileCreateInFlight = false;
+        setProfilePickerBusy(false);
+        showProfileError(error.message || 'Création impossible.');
+      }
+    }
+  }
+
+  function renderLeaderboard(mode, scores) {
+    const list = mode === 'classic' ? ui.classicLeaderboard : ui.constanceLeaderboard;
+    list.replaceChildren();
+    scores.slice(0, 100).forEach((score) => {
+      const entry = document.createElement('li');
+      const rank = document.createElement('span');
+      const nickname = document.createElement('span');
+      const value = document.createElement('strong');
+      rank.textContent = String(score.rank);
+      nickname.textContent = score.nickname;
+      value.textContent = String(score.score);
+      entry.append(rank, nickname, value);
+      list.append(entry);
+    });
+  }
+
+  async function loadLeaderboard(mode) {
+    if (!['classic', 'constance'].includes(mode)) return;
+    const token = ++state.leaderboardTokens[mode];
+    const list = mode === 'classic' ? ui.classicLeaderboard : ui.constanceLeaderboard;
+    clearLeaderboardError();
+    list.setAttribute('aria-busy', 'true');
+    try {
+      const response = await fetch(`/games/calculatorx/leaderboards/${mode}`);
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload || !Array.isArray(payload.scores) || !payload.scores.every(isLeaderboardScore)) {
+        throw new Error('leaderboard unavailable');
+      }
+      if (token !== state.leaderboardTokens[mode]) return;
+      renderLeaderboard(mode, payload.scores);
+    } catch (_error) {
+      if (token === state.leaderboardTokens[mode]) showLeaderboardError('Classement indisponible.');
+    } finally {
+      if (token === state.leaderboardTokens[mode]) list.removeAttribute('aria-busy');
+    }
+  }
+
+  function selectLeaderboard(mode) {
+    if (!['classic', 'constance'].includes(mode)) return;
+    state.leaderboardMode = mode;
+    const isClassic = mode === 'classic';
+    ui.classicLeaderboard.hidden = !isClassic;
+    ui.constanceLeaderboard.hidden = isClassic;
+    ui.classicLeaderboardTab.classList.toggle('is-active', isClassic);
+    ui.constanceLeaderboardTab.classList.toggle('is-active', !isClassic);
+    ui.classicLeaderboardTab.setAttribute('aria-selected', String(isClassic));
+    ui.constanceLeaderboardTab.setAttribute('aria-selected', String(!isClassic));
+    loadLeaderboard(mode);
   }
 
   function formatHistoryDate(playedAt) {
@@ -297,6 +572,15 @@
           marks.append(pending);
         }
         entry.append(marks);
+      }
+      if (isPendingEligibleSession(session)) {
+        const submit = document.createElement('button');
+        submit.className = 'text-button history-submit';
+        submit.type = 'button';
+        submit.textContent = '+';
+        submit.setAttribute('aria-label', 'Ajouter ce score au classement');
+        submit.addEventListener('click', () => openProfilePicker(session, submit));
+        entry.append(submit);
       }
       ui.historyList.append(entry);
     });
@@ -537,6 +821,7 @@
       samples: state.samples.map((sample) => ({...sample})),
     };
     state.lastResult = {request: resultPayload, response: null};
+    renderResultSubmission(null);
 
     try {
       const response = await fetch('/games/calculatorx/result', {
@@ -549,6 +834,7 @@
       if (token !== state.roundToken) return;
       state.lastResult.response = payload;
       renderSummaries(payload.statistics);
+      renderResultSubmission(payload);
     } catch (_error) {
       if (token === state.roundToken) showResultError('Score non enregistré.');
     } finally {
@@ -584,6 +870,7 @@
     state.deadline = now + payload.duration_seconds * 1000;
     state.endedReason = null;
     state.lastResult = null;
+    renderResultSubmission(null);
     state.playing = true;
     state.finishing = false;
     ui.score.textContent = '0';
@@ -692,6 +979,19 @@
   });
   ui.scoresButton.addEventListener('click', () => navigateToPanel(ui.scores));
   ui.clearHistoryButton.addEventListener('click', clearHistory);
+  ui.classicLeaderboardTab.addEventListener('click', () => selectLeaderboard('classic'));
+  ui.constanceLeaderboardTab.addEventListener('click', () => selectLeaderboard('constance'));
+  ui.submitScoreButton.addEventListener('click', () => {
+    const session = state.lastResult?.response?.session;
+    if (state.lastResult?.response?.leaderboard_eligible === true) {
+      openProfilePicker(session, ui.submitScoreButton);
+    }
+  });
+  ui.profileCancelButton.addEventListener('click', () => closeProfilePicker());
+  ui.profileForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    createAndSubmitProfile();
+  });
   ui.resetClassicButton.addEventListener('click', () => applyConfigToForm(classicCustomConfig()));
   ui.customForm.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -724,7 +1024,31 @@
       ui.classicButton.focus();
     });
   });
+
+  function handleProfilePickerKeydown(event) {
+    if (ui.profilePicker.hidden) return false;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeProfilePicker();
+      return true;
+    }
+    if (event.key !== 'Tab') return true;
+    const focusable = profilePickerFocusable();
+    if (focusable.length === 0) return true;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+    return true;
+  }
+
   document.addEventListener('keydown', (event) => {
+    if (handleProfilePickerKeydown(event)) return;
     if (event.key !== 'Enter' || state.playing || state.preparing || state.finishing) return;
     if (event.target.closest('a, button, input, select, textarea, [role="button"]')) return;
     if (ui.mode.hidden && ui.result.hidden) return;

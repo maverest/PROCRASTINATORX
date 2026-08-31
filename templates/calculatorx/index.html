@@ -102,6 +102,7 @@
       <dl class="operation-summaries" id="operationSummaries"></dl>
       <p class="error-message" id="resultError" role="alert" hidden></p>
       <div class="result-actions">
+        <button class="text-button" id="submitScoreButton" type="button" aria-label="Ajouter ce score au classement" hidden>+</button>
         <button class="mode-button mode-button--primary" id="retryButton" type="button">Rejouer</button>
         <button class="text-button" type="button" data-panel="settings">Modifier</button>
         <button class="text-button" type="button" data-panel="modes">Retour</button>
@@ -116,8 +117,32 @@
       <ol class="history-list" id="historyList" aria-live="polite"></ol>
       <p class="error-message" id="historyError" role="alert" hidden></p>
       <button class="text-button text-button--danger" id="clearHistoryButton" type="button">Effacer</button>
+      <section class="leaderboards" aria-label="Classements">
+        <div class="leaderboard-tabs" role="tablist" aria-label="Mode du classement">
+          <button class="text-button is-active" id="classicLeaderboardTab" type="button" role="tab" aria-selected="true" aria-controls="classicLeaderboard">120</button>
+          <button class="text-button" id="constanceLeaderboardTab" type="button" role="tab" aria-selected="false" aria-controls="constanceLeaderboard">C</button>
+        </div>
+        <ol class="leaderboard-list" id="classicLeaderboard" role="tabpanel" aria-labelledby="classicLeaderboardTab" aria-live="polite"></ol>
+        <ol class="leaderboard-list" id="constanceLeaderboard" role="tabpanel" aria-labelledby="constanceLeaderboardTab" aria-live="polite" hidden></ol>
+        <p class="error-message leaderboard-error" id="leaderboardError" role="alert" hidden></p>
+      </section>
     </section>
   </main>
+  <section class="profile-picker" id="profilePicker" role="dialog" aria-modal="true" aria-labelledby="profilePickerTitle" hidden>
+    <div class="profile-picker__panel">
+      <header class="panel-heading">
+        <h2 id="profilePickerTitle">Profil</h2>
+        <button class="text-button" id="profileCancelButton" type="button" aria-label="Fermer">×</button>
+      </header>
+      <p class="error-message" id="profileError" role="alert" hidden></p>
+      <div class="profile-list" id="profileList" aria-label="Profils récents"></div>
+      <form class="profile-create" id="profileForm">
+        <label class="visually-hidden" for="newProfileInput">Nouveau profil</label>
+        <input id="newProfileInput" type="text" maxlength="24" autocomplete="nickname" placeholder="Pseudo">
+        <button class="mode-button mode-button--primary" id="createProfileButton" type="submit" aria-label="Créer ce profil">+</button>
+      </form>
+    </div>
+  </section>
   <script src="/static/calculatorx/chart.js" defer></script>
   <script src="/static/calculatorx/game.js" defer></script>
 </body>

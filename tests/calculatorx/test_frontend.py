@@ -197,3 +197,61 @@ def test_game_style_is_speed_oriented_and_reduced_motion_safe():
     assert "label:nth-of-type(5)" not in css
     assert "@media (prefers-reduced-motion: reduce)" in css
     assert "animation: none" in css
+
+
+def test_template_has_post_game_profile_picker_and_two_boards():
+    html = (ROOT / "templates/calculatorx/index.html").read_text()
+
+    for element_id in (
+        "submitScoreButton",
+        "profilePicker",
+        "profileList",
+        "newProfileInput",
+        "createProfileButton",
+        "classicLeaderboard",
+        "constanceLeaderboard",
+    ):
+        assert f'id="{element_id}"' in html
+    assert 'role="dialog"' in html
+    assert 'aria-modal="true"' in html
+    assert 'id="profileCancelButton" type="button" aria-label="Fermer"' in html
+
+
+def test_browser_uses_only_local_leaderboard_routes_and_two_modes():
+    script = GAME_SCRIPT.read_text()
+
+    assert "/games/calculatorx/leaderboard/submit" in script
+    assert "/games/calculatorx/leaderboards/" in script
+    assert "/games/calculatorx/profiles" in script
+    assert "workers.dev" not in script
+    assert "classic" in script
+    assert "constance" in script
+
+
+def test_pending_history_and_result_use_one_safe_profile_picker_flow():
+    script = GAME_SCRIPT.read_text()
+
+    assert "function openProfilePicker" in script
+    assert "function closeProfilePicker" in script
+    assert "submission_status === 'pending'" in script
+    assert "leaderboard_eligible" in script
+    assert "session_id: state.pendingSubmissionSessionId" in script
+    assert "profile_id: profileId" in script
+    assert "document.createElement('button')" in script
+    assert "textContent" in script
+
+
+def test_profile_picker_preserves_focus_and_prevents_duplicate_submissions():
+    script = GAME_SCRIPT.read_text()
+
+    assert "event.key === 'Escape'" in script
+    assert "event.key !== 'Tab'" in script
+    assert "state.submissionInFlight" in script
+    assert "state.profileCreateInFlight" in script
+    assert "trigger.focus()" in script
+
+
+def test_hidden_profile_picker_does_not_cover_the_game():
+    css = (ROOT / "static/calculatorx/style.css").read_text()
+
+    assert ".profile-picker[hidden] { display: none; }" in css
