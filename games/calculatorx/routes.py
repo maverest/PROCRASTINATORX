@@ -15,9 +15,10 @@ from games.calculatorx.engine import (
     constance_config,
     generate_problems,
     parse_config,
+    reserve_count,
 )
 from games.calculatorx.statistics import ResponseSample, summarize
-from games.calculatorx.storage import CalculatorStorage
+from games.calculatorx.storage import CalculatorStorage, StorageError
 
 BLUEPRINT_NAME = "calculatorx"
 URL_PREFIX = "/games/calculatorx"
@@ -49,7 +50,7 @@ def build_blueprint(
         except (ConfigError, RequestError) as error:
             return _field_error(error)
 
-        problems = problem_factory(config, PROBLEM_COUNT)
+        problems = problem_factory(config, reserve_count(config.duration_seconds))
         return jsonify(
             mode=config.mode,
             duration_seconds=config.duration_seconds,
@@ -69,13 +70,16 @@ def build_blueprint(
             result_data.mode, result_data.duration_seconds, result_data.ended_reason
         )
         submission_status = "pending" if eligible else "not_applicable"
-        session_record = storage.record_session(
-            mode=result_data.mode,
-            duration_seconds=result_data.duration_seconds,
-            score=result_data.score,
-            ended_reason=result_data.ended_reason,
-            submission_status=submission_status,
-        )
+        try:
+            session_record = storage.record_session(
+                mode=result_data.mode,
+                duration_seconds=result_data.duration_seconds,
+                score=result_data.score,
+                ended_reason=result_data.ended_reason,
+                submission_status=submission_status,
+            )
+        except StorageError:
+            return _storage_error()
         return jsonify(
             leaderboard_eligible=eligible,
             session=asdict(session_record),
@@ -84,11 +88,18 @@ def build_blueprint(
 
     @blueprint.get("/history")
     def history():
-        return jsonify(sessions=[asdict(record) for record in storage.list_sessions()])
+        try:
+            sessions = storage.list_sessions()
+        except StorageError:
+            return _storage_error()
+        return jsonify(sessions=[asdict(record) for record in sessions])
 
     @blueprint.delete("/history")
     def clear_history():
-        storage.clear_sessions()
+        try:
+            storage.clear_sessions()
+        except StorageError:
+            return _storage_error()
         return ("", 204)
 
     return blueprint
@@ -138,6 +149,8 @@ def _parse_result() -> ResultData:
     raw_samples = payload.get("samples")
     if not isinstance(raw_samples, list):
         raise RequestError("Les temps de réponse doivent être une liste.", "samples")
+    if len(raw_samples) != score:
+        raise RequestError("Le nombre de temps doit correspondre au score.", "samples")
     try:
         samples = [ResponseSample.from_dict(sample) for sample in raw_samples]
     except ValueError as error:
@@ -173,3 +186,7 @@ def _is_leaderboard_eligible(mode: str, duration_seconds: int, ended_reason: str
 
 def _field_error(error: ConfigError | RequestError):
     return jsonify(error=str(error), field=error.field), 400
+
+
+def _storage_error():
+    return jsonify(error="Historique local indisponible."), 503

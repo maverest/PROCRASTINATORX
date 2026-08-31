@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from math import ceil
 from dataclasses import asdict, dataclass
 from typing import Protocol, TypeVar
 
@@ -234,3 +235,8 @@ def generate_problems(
 ) -> list[Problem]:
     source = rng if rng is not None else random.SystemRandom()
     return [generate_problem(config, source) for _ in range(count)]
+
+
+def reserve_count(duration_seconds: int) -> int:
+    """Return enough locally generated problems for the configured session."""
+    return max(PROBLEM_COUNT, ceil(PROBLEM_COUNT * duration_seconds / DURATION_SECONDS))

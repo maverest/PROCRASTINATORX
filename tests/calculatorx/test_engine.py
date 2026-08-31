@@ -14,6 +14,7 @@ from games.calculatorx.engine import (
     generate_problem,
     generate_problems,
     parse_config,
+    reserve_count,
 )
 
 
@@ -155,6 +156,16 @@ def test_generate_problems_uses_fixed_default_size():
     problems = generate_problems(classic_config())
 
     assert len(problems) == PROBLEM_COUNT == 512
+
+
+@pytest.mark.parametrize(
+    ("duration_seconds", "expected"),
+    [(1, 512), (120, 512), (121, 517), (3600, 15_360)],
+)
+def test_reserve_count_scales_custom_sessions_without_shrinking_the_minimum(
+    duration_seconds, expected
+):
+    assert reserve_count(duration_seconds) == expected
 
 
 def test_generated_divisions_are_always_exact():

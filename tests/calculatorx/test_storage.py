@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from games.calculatorx.storage import CalculatorStorage
+import pytest
+
+from games.calculatorx.storage import CalculatorStorage, StorageError
 from games.calculatorx import build_game
 
 
@@ -59,4 +61,14 @@ def test_clear_history_keeps_database_usable(tmp_path):
 def test_build_game_injects_storage_using_the_catalog_data_directory(tmp_path):
     build_game(tmp_path)
 
-    assert (tmp_path / "calculatorx.sqlite3").is_file()
+    assert not (tmp_path / "calculatorx.sqlite3").exists()
+
+
+def test_storage_constructor_defers_all_database_io_until_a_public_operation(tmp_path):
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("This file deliberately blocks SQLite's parent directory.")
+
+    storage = CalculatorStorage(blocked_parent / "calculatorx.sqlite3")
+
+    with pytest.raises(StorageError):
+        storage.list_sessions()

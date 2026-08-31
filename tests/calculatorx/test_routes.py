@@ -3,6 +3,7 @@ import pytest
 
 from games.calculatorx.engine import GameConfig, Problem
 from games.calculatorx.routes import build_blueprint
+from games.calculatorx.statistics import ResponseSample
 from games.calculatorx.storage import CalculatorStorage
 
 
@@ -41,7 +42,6 @@ def client(tmp_path):
 
     def problems(config: GameConfig, count: int):
         received_configs.append(config)
-        assert count == 512
         return [Problem(301, "÷", 7, 43) for _ in range(count)]
 
     app = Flask(__name__, template_folder="../../templates", static_folder="../../static")
@@ -89,6 +89,16 @@ def test_custom_session_returns_validated_config(client):
     assert response.status_code == 200
     assert response.get_json()["mode"] == "custom"
     assert response.get_json()["duration_seconds"] == 45
+
+
+def test_custom_session_scales_its_problem_reserve_to_its_duration(client):
+    payload = custom_session_payload()
+    payload["duration_seconds"] = 3600
+
+    response = client.post("/games/calculatorx/session", json=payload)
+
+    assert response.status_code == 200
+    assert len(response.get_json()["problems"]) == 15_360
 
 
 def test_constance_session_uses_its_fixed_configuration(client):
@@ -160,6 +170,39 @@ def test_result_rejects_a_score_above_the_leaderboard_limit(client):
     assert response.get_json()["field"] == "score"
 
 
+@pytest.mark.parametrize(
+    ("score", "sample_count"),
+    [(1, 2), (3, 2)],
+)
+def test_result_rejects_a_score_that_does_not_match_its_sample_count(client, score, sample_count):
+    payload = result_payload()
+    payload["score"] = score
+    payload["samples"] = [
+        {"operator": "+", "elapsed_ms": 1000} for _ in range(sample_count)
+    ]
+
+    response = client.post("/games/calculatorx/result", json=payload)
+
+    assert response.status_code == 400
+    assert response.get_json()["field"] == "samples"
+
+
+def test_result_rejects_count_mismatch_before_parsing_samples(client, monkeypatch):
+    payload = result_payload()
+    payload["score"] = 1
+    payload["samples"] = [{"operator": "+", "elapsed_ms": 1000}, {"broken": True}]
+
+    def parsing_must_not_run(_value):
+        raise AssertionError("the samples must be rejected by count before parsing")
+
+    monkeypatch.setattr(ResponseSample, "from_dict", parsing_must_not_run)
+
+    response = client.post("/games/calculatorx/result", json=payload)
+
+    assert response.status_code == 400
+    assert response.get_json()["field"] == "samples"
+
+
 def test_history_excludes_samples_and_can_be_cleared(client):
     client.post("/games/calculatorx/result", json=result_payload())
 
@@ -174,3 +217,41 @@ def test_history_excludes_samples_and_can_be_cleared(client):
 
 def test_session_rejects_get(client):
     assert client.get("/games/calculatorx/session").status_code == 405
+
+
+@pytest.fixture
+def unavailable_storage_client(tmp_path):
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("This file deliberately blocks SQLite's parent directory.")
+    storage = CalculatorStorage(blocked_parent / "calculatorx.sqlite3")
+    app = Flask(__name__, template_folder="../../templates", static_folder="../../static")
+    app.config["TESTING"] = True
+
+    @app.get("/")
+    def home():
+        return "menu"
+
+    app.register_blueprint(build_blueprint(storage=storage))
+    return app.test_client()
+
+
+@pytest.mark.parametrize("method", ["get", "delete"])
+def test_unavailable_storage_returns_json_503_for_history(unavailable_storage_client, method):
+    response = getattr(unavailable_storage_client, method)("/games/calculatorx/history")
+
+    assert response.status_code == 503
+    assert response.is_json
+    assert response.get_json() == {"error": "Historique local indisponible."}
+
+
+def test_unavailable_storage_keeps_index_and_session_available(unavailable_storage_client):
+    assert unavailable_storage_client.get("/games/calculatorx/").status_code == 200
+    assert unavailable_storage_client.post("/games/calculatorx/session").status_code == 200
+
+
+def test_unavailable_storage_returns_json_503_for_results(unavailable_storage_client):
+    response = unavailable_storage_client.post("/games/calculatorx/result", json=result_payload())
+
+    assert response.status_code == 503
+    assert response.is_json
+    assert response.get_json() == {"error": "Historique local indisponible."}

@@ -18,25 +18,13 @@ class SessionRecord:
     nickname: str | None
 
 
+class StorageError(RuntimeError):
+    """A local SQLite operation could not be completed."""
+
+
 class CalculatorStorage:
     def __init__(self, database_path: Path):
         self.database_path = database_path
-        self.database_path.parent.mkdir(parents=True, exist_ok=True)
-        with self._connect() as connection:
-            connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS calculator_sessions (
-                  id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  played_at TEXT NOT NULL,
-                  mode TEXT NOT NULL CHECK (mode IN ('classic','custom','constance')),
-                  duration_seconds INTEGER NOT NULL,
-                  score INTEGER NOT NULL,
-                  ended_reason TEXT NOT NULL CHECK (ended_reason IN ('timeout','stopped','exhausted')),
-                  submission_status TEXT NOT NULL CHECK (submission_status IN ('not_applicable','pending','submitted')),
-                  nickname TEXT
-                )
-                """
-            )
 
     def record_session(
         self,
@@ -47,7 +35,7 @@ class CalculatorStorage:
         submission_status: str,
     ) -> SessionRecord:
         played_at = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
-        with self._connect() as connection:
+        def record(connection: sqlite3.Connection) -> SessionRecord:
             cursor = connection.execute(
                 """
                 INSERT INTO calculator_sessions (
@@ -67,17 +55,21 @@ class CalculatorStorage:
             row = connection.execute(
                 "SELECT * FROM calculator_sessions WHERE id = ?", (cursor.lastrowid,)
             ).fetchone()
-        return self._record_from_row(row)
+            return self._record_from_row(row)
+
+        return self._run(record)
 
     def list_sessions(self) -> list[SessionRecord]:
-        with self._connect() as connection:
+        def list_records(connection: sqlite3.Connection) -> list[SessionRecord]:
             rows = connection.execute(
                 "SELECT * FROM calculator_sessions ORDER BY played_at DESC, id DESC"
             ).fetchall()
-        return [self._record_from_row(row) for row in rows]
+            return [self._record_from_row(row) for row in rows]
+
+        return self._run(list_records)
 
     def mark_submitted(self, session_id: int, nickname: str) -> SessionRecord:
-        with self._connect() as connection:
+        def mark(connection: sqlite3.Connection) -> SessionRecord:
             connection.execute(
                 """
                 UPDATE calculator_sessions
@@ -89,13 +81,42 @@ class CalculatorStorage:
             row = connection.execute(
                 "SELECT * FROM calculator_sessions WHERE id = ?", (session_id,)
             ).fetchone()
-        if row is None:
-            raise KeyError(session_id)
-        return self._record_from_row(row)
+            if row is None:
+                raise KeyError(session_id)
+            return self._record_from_row(row)
+
+        return self._run(mark)
 
     def clear_sessions(self) -> None:
-        with self._connect() as connection:
+        def clear(connection: sqlite3.Connection) -> None:
             connection.execute("DELETE FROM calculator_sessions")
+        self._run(clear)
+
+    def _run(self, operation):
+        try:
+            self.database_path.parent.mkdir(parents=True, exist_ok=True)
+            with self._connect() as connection:
+                self._initialize(connection)
+                return operation(connection)
+        except (OSError, sqlite3.Error) as error:
+            raise StorageError("Historique local indisponible.") from error
+
+    @staticmethod
+    def _initialize(connection: sqlite3.Connection) -> None:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS calculator_sessions (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              played_at TEXT NOT NULL,
+              mode TEXT NOT NULL CHECK (mode IN ('classic','custom','constance')),
+              duration_seconds INTEGER NOT NULL,
+              score INTEGER NOT NULL,
+              ended_reason TEXT NOT NULL CHECK (ended_reason IN ('timeout','stopped','exhausted')),
+              submission_status TEXT NOT NULL CHECK (submission_status IN ('not_applicable','pending','submitted')),
+              nickname TEXT
+            )
+            """
+        )
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.database_path)
