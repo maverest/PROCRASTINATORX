@@ -30,6 +30,7 @@
         <button class="text-button" type="button" data-panel="modes">Retour</button>
       </header>
       <form id="customForm" class="settings-form">
+        <p class="error-message" id="settingsError" role="alert" hidden></p>
         <label class="duration-field" for="customDuration">s
           <input id="customDuration" name="duration_seconds" type="number" min="1" max="3600" value="120" inputmode="numeric" required>
         </label>
@@ -74,6 +75,7 @@
     <section class="panel game-panel" id="gamePanel" aria-labelledby="gameTitle" hidden>
       <h2 class="visually-hidden" id="gameTitle">Partie en cours</h2>
       <header class="game-stats">
+        <p class="active-mode" id="activeMode">Classique</p>
         <p><span class="visually-hidden">Temps restant </span><strong id="timerValue">120</strong><span aria-hidden="true">s</span></p>
         <p><span class="visually-hidden">Score </span><strong id="scoreValue">0</strong></p>
         <p class="projected-score" id="projectedScore" aria-live="polite" hidden>≈0</p>

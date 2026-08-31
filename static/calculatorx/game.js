@@ -37,12 +37,14 @@
     problem: document.getElementById('problemText'),
     timer: document.getElementById('timerValue'),
     score: document.getElementById('scoreValue'),
+    activeMode: document.getElementById('activeMode'),
     projectedScore: document.getElementById('projectedScore'),
     finalScore: document.getElementById('finalScore'),
     responseChart: document.getElementById('responseChart'),
     resultChart: document.getElementById('resultChart'),
     operationSummaries: document.getElementById('operationSummaries'),
     error: document.getElementById('errorMessage'),
+    settingsError: document.getElementById('settingsError'),
     resultError: document.getElementById('resultError'),
     historyList: document.getElementById('historyList'),
     historyError: document.getElementById('historyError'),
@@ -174,7 +176,7 @@
   }
 
   function clearError() {
-    [ui.error, ui.resultError].forEach((error) => {
+    [ui.error, ui.settingsError, ui.resultError].forEach((error) => {
       error.hidden = true;
       error.textContent = '';
     });
@@ -183,6 +185,40 @@
   function showError(message) {
     ui.error.textContent = message;
     ui.error.hidden = false;
+  }
+
+  function clearSettingsError() {
+    ui.settingsError.hidden = true;
+    ui.settingsError.textContent = '';
+  }
+
+  function showSettingsError(message, field) {
+    ui.settingsError.textContent = message;
+    ui.settingsError.hidden = false;
+    focusSettingsField(field);
+  }
+
+  function focusSettingsField(field) {
+    const controls = {
+      duration_seconds: ui.customDuration,
+      operations: ui.operationInputs[0],
+      addition: ui.additionLeftMinimum,
+      'addition.left': ui.additionLeftMinimum,
+      'addition.left.minimum': ui.additionLeftMinimum,
+      'addition.left.maximum': ui.additionLeftMaximum,
+      'addition.right': ui.additionRightMinimum,
+      'addition.right.minimum': ui.additionRightMinimum,
+      'addition.right.maximum': ui.additionRightMaximum,
+      multiplication: ui.multiplicationLeftMinimum,
+      'multiplication.left': ui.multiplicationLeftMinimum,
+      'multiplication.left.minimum': ui.multiplicationLeftMinimum,
+      'multiplication.left.maximum': ui.multiplicationLeftMaximum,
+      'multiplication.right': ui.multiplicationRightMinimum,
+      'multiplication.right.minimum': ui.multiplicationRightMinimum,
+      'multiplication.right.maximum': ui.multiplicationRightMaximum,
+    };
+    const control = controls[field];
+    if (control) control.focus();
   }
 
   function showResultError(message) {
@@ -343,8 +379,49 @@
         },
       },
     };
-    if (!isCustomConfig(config)) throw new Error('Réglages invalides.');
+    validateCustomConfig(config);
     return config;
+  }
+
+  class SettingsError extends Error {
+    constructor(message, field) {
+      super(message);
+      this.field = field;
+    }
+  }
+
+  class SessionError extends Error {
+    constructor(message, field = null) {
+      super(message);
+      this.field = field;
+    }
+  }
+
+  function validateInteger(value, field, minimum, maximum, rangeMessage) {
+    if (!Number.isInteger(value)) throw new SettingsError('Cette valeur doit être un entier.', field);
+    if (value < minimum || value > maximum) throw new SettingsError(rangeMessage, field);
+  }
+
+  function validateRange(range, field) {
+    validateInteger(range.minimum, `${field}.minimum`, 0, 9999, 'Le minimum doit être compris entre 0 et 9999.');
+    validateInteger(range.maximum, `${field}.maximum`, 0, 9999, 'Le maximum doit être compris entre 0 et 9999.');
+    if (range.minimum > range.maximum) {
+      throw new SettingsError('Le minimum ne peut pas dépasser le maximum.', field);
+    }
+  }
+
+  function validateCustomConfig(config) {
+    validateInteger(config.duration_seconds, 'duration_seconds', 1, 3600, 'La durée doit être comprise entre 1 et 3600.');
+    if (config.operations.length === 0) {
+      throw new SettingsError('Choisis au moins une opération.', 'operations');
+    }
+    validateRange(config.addition.left, 'addition.left');
+    validateRange(config.addition.right, 'addition.right');
+    validateRange(config.multiplication.left, 'multiplication.left');
+    validateRange(config.multiplication.right, 'multiplication.right');
+    if (config.operations.includes('÷') && config.multiplication.left.maximum === 0) {
+      throw new SettingsError('Le diviseur doit pouvoir être différent de zéro.', 'multiplication.left');
+    }
   }
 
   function applyConfigToForm(config) {
@@ -409,15 +486,21 @@
 
   function renderSummaries(statistics) {
     ui.operationSummaries.replaceChildren();
-    OPERATIONS.forEach((operator) => {
+    const enabledOperations = state.mode === 'custom' ? state.config.operations : OPERATIONS;
+    enabledOperations.forEach((operator) => {
       const summary = statistics && statistics[operator];
-      if (!summary) return;
       const group = document.createElement('div');
       const term = document.createElement('dt');
       const details = document.createElement('dd');
       term.textContent = operator;
-      details.textContent = `${summary.count} · ${formatMilliseconds(summary.median_ms)} · ${formatMilliseconds(summary.fastest_ms)}–${formatMilliseconds(summary.slowest_ms)}`;
-      details.setAttribute('aria-label', `${summary.count} réponses, médiane ${formatMilliseconds(summary.median_ms)}, meilleur temps ${formatMilliseconds(summary.fastest_ms)}, temps le plus lent ${formatMilliseconds(summary.slowest_ms)}`);
+      if (summary) {
+        details.textContent = `${summary.count} · ${formatMilliseconds(summary.median_ms)} · ${formatMilliseconds(summary.fastest_ms)}–${formatMilliseconds(summary.slowest_ms)}`;
+        details.setAttribute('aria-label', `${summary.count} réponses, médiane ${formatMilliseconds(summary.median_ms)}, meilleur temps ${formatMilliseconds(summary.fastest_ms)}, temps le plus lent ${formatMilliseconds(summary.slowest_ms)}`);
+      } else {
+        const emptySummary = {count: 0};
+        details.textContent = `${emptySummary.count} · — · —–—`;
+        details.setAttribute('aria-label', '0 réponse, aucune statistique de temps');
+      }
       group.append(term, details);
       ui.operationSummaries.append(group);
     });
@@ -490,6 +573,7 @@
     state.score = 0;
     state.samples = [];
     state.durationSeconds = payload.duration_seconds;
+    ui.activeMode.textContent = {classic: 'Classique', custom: 'Perso', constance: 'Constance'}[payload.mode];
     state.roundStartedAt = now;
     state.deadline = now + payload.duration_seconds * 1000;
     state.endedReason = null;
@@ -512,9 +596,14 @@
     updateClock(token);
   }
 
-  function showPreparationError(token, message = 'Impossible de préparer la partie.') {
+  function showPreparationError(token, message = 'Impossible de préparer la partie.', field = null) {
     if (token !== state.roundToken) return;
     setPreparing(false);
+    if (state.mode === 'custom' && field) {
+      showPanel(ui.settings);
+      showSettingsError(message, field);
+      return;
+    }
     showPanel(ui.mode);
     showError(message);
     ui.classicButton.focus();
@@ -532,15 +621,21 @@
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(state.config),
     })
-      .then((response) => {
-        if (!response.ok) throw new Error('session unavailable');
+      .then(async (response) => {
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          throw new SessionError(
+            typeof payload?.error === 'string' ? payload.error : 'Impossible de préparer la partie.',
+            typeof payload?.field === 'string' ? payload.field : null,
+          );
+        }
         return response.json();
       })
       .then((payload) => {
         if (!isSession(payload)) throw new Error('invalid session');
         beginRound(payload, token);
       })
-      .catch(() => showPreparationError(token));
+      .catch((error) => showPreparationError(token, error.message, error.field));
   }
 
   function selectMode(mode) {
@@ -589,13 +684,15 @@
   ui.resetClassicButton.addEventListener('click', () => applyConfigToForm(classicCustomConfig()));
   ui.customForm.addEventListener('submit', (event) => {
     event.preventDefault();
+    clearSettingsError();
     try {
       const config = configFromForm();
       state.mode = 'custom';
       state.config = config;
       prepareRound();
     } catch (error) {
-      showPreparationError(state.roundToken, error.message);
+      if (error instanceof SettingsError) showSettingsError(error.message, error.field);
+      else showSettingsError('Réglages invalides.', null);
     }
   });
   ui.retry.addEventListener('click', prepareRound);

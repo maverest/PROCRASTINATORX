@@ -58,6 +58,7 @@ h2 { font-size: clamp(1.35rem, 4vw, 2rem); font-weight: 700; letter-spacing: -.0
 .text-button { min-height: 44px; padding: 8px 0; background: transparent; font-size: .8rem; font-weight: 700; }
 .text-button--danger { color: var(--danger); }
 .error-message { margin-top: 18px; color: var(--danger); font-size: .9rem; }
+.settings-form > .error-message { margin: 0; }
 
 .settings-panel, .scores-panel { max-width: 600px; margin-right: auto; margin-left: auto; }
 .settings-form { display: grid; gap: 22px; margin-top: 28px; }
@@ -85,6 +86,7 @@ legend { margin-bottom: 10px; color: var(--muted); font-size: .76rem; font-weigh
 .game-panel { max-width: 680px; margin-right: auto; margin-left: auto; }
 .game-stats { min-height: 52px; padding: 0 2px; font-size: .95rem; font-variant-numeric: tabular-nums; }
 .game-stats strong { font-weight: 720; }
+.active-mode { color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .projected-score { margin-left: auto; color: color-mix(in srgb, var(--accent) 65%, var(--muted)); font-size: .82rem; font-weight: 700; }
 #stopButton { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; color: var(--danger); background: transparent; border-radius: 50%; font-size: 28px; line-height: 1; }
 .problem-text { margin: clamp(56px, 14vh, 126px) 0 26px; font-size: clamp(3.5rem, 18vw, 8.5rem); font-weight: 650; letter-spacing: -.08em; line-height: .95; text-align: center; font-variant-numeric: tabular-nums; }

@@ -31,6 +31,7 @@ def test_template_exposes_v2_panels_and_controls():
         "projectedScore",
         "responseChart",
         "operationSummaries",
+        "settingsError",
         "resultError",
         "historyList",
     ):
@@ -116,6 +117,25 @@ def test_result_submission_error_is_rendered_inside_result_panel():
     assert 'id="resultError"' in result_panel
     assert 'role="alert"' in result_panel
     assert "ui.resultError.textContent" in script
+
+
+def test_custom_errors_stay_in_settings_and_name_the_invalid_control():
+    html = (ROOT / "templates/calculatorx/index.html").read_text()
+    script = GAME_SCRIPT.read_text()
+    settings_panel = html[html.index('id="settingsPanel"') : html.index('id="gamePanel"')]
+
+    assert 'id="settingsError"' in settings_panel
+    assert 'role="alert"' in settings_panel
+    assert "showSettingsError" in script
+    assert "focusSettingsField" in script
+    assert "showPanel(ui.settings)" in script
+
+
+def test_result_summary_renders_zero_count_entries_for_enabled_operations():
+    script = GAME_SCRIPT.read_text()
+
+    assert "state.config.operations" in script
+    assert "count: 0" in script
 
 
 def test_scores_screen_loads_and_clears_local_history():
