@@ -2,9 +2,10 @@ from flask import Flask
 import pytest
 
 from games.calculatorx.engine import GameConfig, Problem
+from games.calculatorx.leaderboard import LeaderboardUnavailable
 from games.calculatorx.routes import build_blueprint
 from games.calculatorx.statistics import ResponseSample
-from games.calculatorx.storage import CalculatorStorage
+from games.calculatorx.storage import CalculatorStorage, StorageError
 
 
 def custom_session_payload():
@@ -290,3 +291,141 @@ def test_unavailable_storage_returns_json_503_for_results(unavailable_storage_cl
     assert response.status_code == 503
     assert response.is_json
     assert response.get_json() == {"error": "Historique local indisponible."}
+
+
+class FakeLeaderboard:
+    def __init__(self):
+        self.scores = {"classic": [], "constance": []}
+        self.submissions: list[tuple[str, str, int]] = []
+        self.error: Exception | None = None
+
+    def list_scores(self, mode):
+        if self.error:
+            raise self.error
+        return self.scores[mode]
+
+    def submit_score(self, mode, nickname, score):
+        if self.error:
+            raise self.error
+        self.submissions.append((mode, nickname, score))
+        return {
+            "rank": 1,
+            "nickname": nickname,
+            "score": score,
+            "achieved_at": "2026-08-31T10:00:00Z",
+        }
+
+
+@pytest.fixture
+def leaderboard_context(tmp_path):
+    storage = CalculatorStorage(tmp_path / "calculatorx.sqlite3")
+    remote = FakeLeaderboard()
+    app = Flask(__name__, template_folder="../../templates", static_folder="../../static")
+    app.config["TESTING"] = True
+    app.register_blueprint(build_blueprint(storage=storage, leaderboard_client=remote))
+    return app.test_client(), storage, remote
+
+
+def record_ranked_session(storage, *, score=73, mode="classic"):
+    return storage.record_session(mode, 120, score, "timeout", "pending")
+
+
+def submit_session(client, session_id, profile_id, **extra):
+    return client.post(
+        "/games/calculatorx/leaderboard/submit",
+        json={"session_id": session_id, "profile_id": profile_id, **extra},
+    )
+
+
+def test_profiles_are_created_deduplicated_and_listed(leaderboard_context):
+    client, _storage, _remote = leaderboard_context
+
+    first = client.post("/games/calculatorx/profiles", json={"nickname": " Ada "})
+    again = client.post("/games/calculatorx/profiles", json={"nickname": "ADA"})
+    listed = client.get("/games/calculatorx/profiles")
+
+    assert first.status_code == again.status_code == listed.status_code == 200
+    assert first.get_json()["profile"]["id"] == again.get_json()["profile"]["id"]
+    assert listed.get_json()["profiles"][0]["nickname"] == "Ada"
+
+
+def test_submit_route_uses_stored_score_and_marks_only_after_remote_success(leaderboard_context):
+    client, storage, remote = leaderboard_context
+    session = record_ranked_session(storage, score=73)
+    profile = storage.create_profile("Ada")
+
+    response = submit_session(client, session.id, profile.id)
+
+    assert response.status_code == 200
+    assert remote.submissions == [("classic", "Ada", 73)]
+    assert storage.get_session(session.id).submission_status == "submitted"
+
+
+@pytest.mark.parametrize(
+    "mode, duration_seconds, ended_reason, submission_status",
+    [
+        ("custom", 45, "timeout", "pending"),
+        ("classic", 120, "stopped", "not_applicable"),
+        ("classic", 120, "timeout", "submitted"),
+    ],
+)
+def test_ineligible_or_submitted_session_is_not_sent(leaderboard_context, mode, duration_seconds, ended_reason, submission_status):
+    client, storage, remote = leaderboard_context
+    session = storage.record_session(mode, duration_seconds, 4, ended_reason, submission_status)
+    profile = storage.create_profile("Ada")
+
+    response = submit_session(client, session.id, profile.id)
+
+    assert response.status_code == 409
+    assert remote.submissions == []
+
+
+def test_submit_rejects_unknown_or_invalid_client_identifiers(leaderboard_context):
+    client, storage, remote = leaderboard_context
+    session = record_ranked_session(storage)
+    profile = storage.create_profile("Ada")
+
+    assert submit_session(client, 999, profile.id).status_code == 404
+    assert submit_session(client, session.id, "missing").status_code == 404
+    assert submit_session(client, True, profile.id).status_code == 400
+    assert submit_session(client, session.id, profile.id, score=9999).status_code == 400
+    assert remote.submissions == []
+
+
+def test_offline_remote_leaves_session_pending_and_returns_503(leaderboard_context):
+    client, storage, remote = leaderboard_context
+    session = record_ranked_session(storage)
+    profile = storage.create_profile("Ada")
+    remote.error = LeaderboardUnavailable("offline")
+
+    response = submit_session(client, session.id, profile.id)
+
+    assert response.status_code == 503
+    assert storage.get_session(session.id).submission_status == "pending"
+
+
+def test_local_mark_failure_after_remote_success_leaves_session_retryable(
+    leaderboard_context, monkeypatch
+):
+    client, storage, remote = leaderboard_context
+    session = record_ranked_session(storage)
+    profile = storage.create_profile("Ada")
+
+    def fail_mark(*_args):
+        raise StorageError("Historique local indisponible.")
+
+    monkeypatch.setattr(storage, "mark_submitted", fail_mark)
+
+    response = submit_session(client, session.id, profile.id)
+
+    assert response.status_code == 503
+    assert remote.submissions == [("classic", "Ada", 73)]
+    assert storage.get_session(session.id).submission_status == "pending"
+
+
+def test_local_boards_only_allow_the_two_ranked_modes(leaderboard_context):
+    client, _storage, remote = leaderboard_context
+    remote.scores["classic"] = [{"rank": 1, "nickname": "Ada", "score": 73, "achieved_at": "2026-08-31T10:00:00Z"}]
+
+    assert client.get("/games/calculatorx/leaderboards/classic").get_json()["scores"][0]["score"] == 73
+    assert client.get("/games/calculatorx/leaderboards/custom").status_code == 404
