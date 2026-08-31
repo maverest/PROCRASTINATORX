@@ -6,6 +6,7 @@
     "lib": ["ES2022", "WebWorker"],
     "types": ["@cloudflare/workers-types", "vitest/globals"],
     "strict": true,
+    "skipLibCheck": true,
     "noEmit": true
   },
   "include": ["src", "test", "vitest.config.ts"]
