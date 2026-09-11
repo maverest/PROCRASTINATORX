@@ -7,6 +7,7 @@
   const STORAGE_KEYS = {
     mode: 'calculatorx:last-mode',
     customConfig: 'calculatorx:custom-config',
+    theme: 'calculatorx:theme',
   };
 
   const ui = {
@@ -16,6 +17,7 @@
     game: document.getElementById('gamePanel'),
     result: document.getElementById('resultPanel'),
     scores: document.getElementById('scoresPanel'),
+    themeToggle: document.getElementById('themeToggleButton'),
     classicButton: document.getElementById('classicButton'),
     customButton: document.getElementById('customButton'),
     constanceButton: document.getElementById('constanceButton'),
@@ -165,6 +167,9 @@
   function loadPreferences() {
     const storedMode = readStoredJson(STORAGE_KEYS.mode);
     const storedConfig = readStoredJson(STORAGE_KEYS.customConfig);
+    const storedTheme = readStoredJson(STORAGE_KEYS.theme);
+    const systemTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    applyTheme(storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : systemTheme);
     state.mode = ['classic', 'custom', 'constance'].includes(storedMode) ? storedMode : 'classic';
     if (state.mode === 'custom' && isCustomConfig(storedConfig)) {
       state.config = storedConfig;
@@ -175,6 +180,16 @@
       state.config = {mode: 'classic'};
     }
     applyConfigToForm(isCustomConfig(storedConfig) ? storedConfig : classicCustomConfig());
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    const lightIsActive = theme === 'light';
+    ui.themeToggle.textContent = lightIsActive ? '☾' : '☀︎';
+    ui.themeToggle.setAttribute(
+      'aria-label',
+      lightIsActive ? 'Activer le thème sombre' : 'Activer le thème clair',
+    );
   }
 
   function showPanel(panel) {
@@ -808,11 +823,11 @@
       const details = document.createElement('dd');
       term.textContent = operator;
       if (summary) {
-        details.textContent = `${summary.count} · ${formatMilliseconds(summary.median_ms)} · ${formatMilliseconds(summary.fastest_ms)}–${formatMilliseconds(summary.slowest_ms)}`;
-        details.setAttribute('aria-label', `${summary.count} réponses, médiane ${formatMilliseconds(summary.median_ms)}, meilleur temps ${formatMilliseconds(summary.fastest_ms)}, temps le plus lent ${formatMilliseconds(summary.slowest_ms)}`);
+        details.textContent = `${summary.count} · ${formatMilliseconds(summary.mean_ms)} (${formatMilliseconds(summary.standard_deviation_ms)})`;
+        details.setAttribute('aria-label', `${summary.count} réponses, moyenne ${formatMilliseconds(summary.mean_ms)}, écart-type ${formatMilliseconds(summary.standard_deviation_ms)}`);
       } else {
         const emptySummary = {count: 0};
-        details.textContent = `${emptySummary.count} · — · —–—`;
+        details.textContent = `${emptySummary.count} · — (—)`;
         details.setAttribute('aria-label', '0 réponse, aucune statistique de temps');
       }
       group.append(term, details);
@@ -1040,6 +1055,11 @@
     }
   });
   ui.startButton.addEventListener('click', prepareRound);
+  ui.themeToggle.addEventListener('click', () => {
+    const theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    applyTheme(theme);
+    writeStoredJson(STORAGE_KEYS.theme, theme);
+  });
   ui.retry.addEventListener('click', prepareRound);
   ui.stopButton.addEventListener('click', () => finishRound(state.roundToken, 'stopped'));
   ui.chartToggleButton.addEventListener('click', () => {

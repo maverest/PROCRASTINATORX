@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from statistics import median
+from statistics import mean, pstdev
 
 from games.calculatorx.engine import OPERATIONS
 
@@ -39,9 +39,8 @@ class ResponseSample:
 @dataclass(frozen=True, slots=True)
 class OperationSummary:
     count: int
-    median_ms: int
-    fastest_ms: int
-    slowest_ms: int
+    mean_ms: int
+    standard_deviation_ms: int
 
 
 def summarize(samples: Sequence[ResponseSample]) -> dict[str, OperationSummary]:
@@ -52,9 +51,8 @@ def summarize(samples: Sequence[ResponseSample]) -> dict[str, OperationSummary]:
     return {
         operation: OperationSummary(
             count=len(elapsed_times),
-            median_ms=_round_half_up(median(elapsed_times)),
-            fastest_ms=min(elapsed_times),
-            slowest_ms=max(elapsed_times),
+            mean_ms=_round_half_up(mean(elapsed_times)),
+            standard_deviation_ms=_round_half_up(pstdev(elapsed_times)),
         )
         for operation in OPERATIONS
         if (elapsed_times := grouped[operation])

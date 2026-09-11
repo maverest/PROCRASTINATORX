@@ -137,8 +137,8 @@ def test_finished_classic_result_recalculates_statistics_and_persists_summary(cl
     assert payload["leaderboard_eligible"] is True
     assert payload["session"]["submission_status"] == "pending"
     assert payload["statistics"] == {
-        "+": {"count": 1, "median_ms": 1000, "fastest_ms": 1000, "slowest_ms": 1000},
-        "÷": {"count": 1, "median_ms": 2500, "fastest_ms": 2500, "slowest_ms": 2500},
+        "+": {"count": 1, "mean_ms": 1000, "standard_deviation_ms": 0},
+        "÷": {"count": 1, "mean_ms": 2500, "standard_deviation_ms": 0},
     }
 
 

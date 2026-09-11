@@ -7,10 +7,10 @@
   const PADDING = 8;
   const MINIMUM_SCALE_MS = 4000;
   const OPERATION_COLORS = {
-    '+': '#72d6a6',
-    '−': '#7db7ff',
-    '×': '#e8b36a',
-    '÷': '#d99af7',
+    '+': 'var(--add)',
+    '−': 'var(--subtract)',
+    '×': 'var(--multiply)',
+    '÷': 'var(--divide)',
   };
 
   function element(name, attributes = {}) {
@@ -25,11 +25,8 @@
     svg.replaceChildren();
   }
 
-  function median(values) {
-    const ordered = [...values].sort((left, right) => left - right);
-    const middle = Math.floor(ordered.length / 2);
-    if (ordered.length % 2 === 1) return ordered[middle];
-    return (ordered[middle - 1] + ordered[middle]) / 2;
+  function mean(values) {
+    return values.reduce((total, value) => total + value, 0) / values.length;
   }
 
   function render(svg, samples, {limit} = {}) {
@@ -62,19 +59,19 @@
         x2: WIDTH - PADDING,
         y1: y(scaleMaximum * fraction),
         y2: y(scaleMaximum * fraction),
-        stroke: '#303641',
+        stroke: 'var(--chart-grid)',
         'stroke-width': 1,
         'vector-effect': 'non-scaling-stroke',
       }));
     }
 
-    const medianY = y(median(elapsedTimes));
+    const meanY = y(mean(elapsedTimes));
     drawing.append(element('line', {
       x1: PADDING,
       x2: WIDTH - PADDING,
-      y1: medianY,
-      y2: medianY,
-      stroke: '#89919d',
+      y1: meanY,
+      y2: meanY,
+      stroke: 'var(--chart-line)',
       'stroke-width': 1,
       'stroke-dasharray': '5 5',
       'vector-effect': 'non-scaling-stroke',
@@ -83,7 +80,7 @@
     drawing.append(element('polyline', {
       points: visibleSamples.map((sample, index) => `${x(index)},${y(sample.elapsed_ms)}`).join(' '),
       fill: 'none',
-      stroke: '#89919d',
+      stroke: 'var(--chart-line)',
       'stroke-opacity': 0.55,
       'stroke-width': 1.5,
       'vector-effect': 'non-scaling-stroke',
@@ -94,8 +91,8 @@
         cx: x(index),
         cy: y(sample.elapsed_ms),
         r: 3.5,
-        fill: OPERATION_COLORS[sample.operator] || '#f4f6f8',
-        stroke: '#101216',
+        fill: OPERATION_COLORS[sample.operator] || 'var(--text)',
+        stroke: 'var(--chart-point-stroke)',
         'stroke-width': 1,
         'vector-effect': 'non-scaling-stroke',
       }));

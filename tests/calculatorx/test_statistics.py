@@ -8,7 +8,7 @@ from games.calculatorx.statistics import (
 )
 
 
-def test_summary_groups_and_uses_true_median():
+def test_summary_groups_and_uses_population_mean_and_standard_deviation():
     samples = [
         ResponseSample("+", 1000),
         ResponseSample("+", 3000),
@@ -18,11 +18,11 @@ def test_summary_groups_and_uses_true_median():
 
     summary = summarize(samples)
 
-    assert summary["+"] == OperationSummary(3, 2000, 1000, 3000)
-    assert summary["÷"] == OperationSummary(1, 4500, 4500, 4500)
+    assert summary["+"] == OperationSummary(3, 2000, 816)
+    assert summary["÷"] == OperationSummary(1, 4500, 0)
 
 
-def test_summary_uses_the_median_instead_of_the_average():
+def test_summary_uses_the_average_instead_of_the_median():
     summary = summarize(
         [
             ResponseSample("+", 1000),
@@ -31,13 +31,13 @@ def test_summary_uses_the_median_instead_of_the_average():
         ]
     )
 
-    assert summary["+"] == OperationSummary(3, 3000, 1000, 10_000)
+    assert summary["+"] == OperationSummary(3, 4667, 3859)
 
 
 def test_summary_rounds_half_milliseconds_up():
     summary = summarize([ResponseSample("+", 1000), ResponseSample("+", 1001)])
 
-    assert summary["+"] == OperationSummary(2, 1001, 1000, 1001)
+    assert summary["+"] == OperationSummary(2, 1001, 1)
 
 
 def test_summary_orders_operations_for_a_stable_json_contract():

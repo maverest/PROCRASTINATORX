@@ -10,7 +10,10 @@
   <main class="calculatorx-shell" id="calculatorxApp">
     <nav class="calculatorx-nav" aria-label="Navigation du jeu">
       <a href="{{ url_for('home') }}">← Jeux</a>
-      <span aria-hidden="true">CalculatorX</span>
+      <div class="nav-tools">
+        <span aria-hidden="true">CalculatorX</span>
+        <button class="theme-toggle" id="themeToggleButton" type="button" aria-label="Activer le thème clair">☀︎</button>
+      </div>
     </nav>
 
     <section class="panel mode-panel" id="modePanel" aria-labelledby="modeTitle">
@@ -129,6 +132,7 @@
     <section class="panel result-panel" id="resultPanel" aria-labelledby="resultTitle" hidden>
       <h2 id="resultTitle"><span class="visually-hidden">Score </span><strong id="finalScore">0</strong></h2>
       <div class="response-figure response-figure--result" id="resultChart" aria-hidden="true"></div>
+      <p class="statistics-legend" id="statisticsLegend"><abbr title="Nombre de réponses">n</abbr> · moy. (<abbr title="Écart-type">sd</abbr>)</p>
       <dl class="operation-summaries" id="operationSummaries"></dl>
       <p class="error-message" id="resultError" role="alert" hidden></p>
       <div class="result-actions">

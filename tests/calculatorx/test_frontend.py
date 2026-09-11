@@ -39,6 +39,8 @@ def test_template_exposes_v2_panels_and_controls():
         "settingsError",
         "resultError",
         "historyList",
+        "themeToggleButton",
+        "statisticsLegend",
     ):
         assert f'id="{element_id}"' in html
     assert 'aria-label="Arrêter la séance"' in html
@@ -148,6 +150,8 @@ def test_chart_has_sliding_live_window_and_operation_palette():
     script = CHART_SCRIPT.read_text()
 
     assert "samples.slice(-limit)" in script
+    assert "function mean(values)" in script
+    assert "median" not in script
     for operator in ("+", "−", "×", "÷"):
         assert repr(operator) in script or f"'{operator}'" in script
 
@@ -199,6 +203,22 @@ def test_result_summary_renders_zero_count_entries_for_enabled_operations():
 
     assert "state.config.operations" in script
     assert "count: 0" in script
+    assert "summary.mean_ms" in script
+    assert "summary.standard_deviation_ms" in script
+
+
+def test_theme_toggle_uses_the_saved_choice_and_system_preference():
+    html = (ROOT / "templates/calculatorx/index.html").read_text()
+    script = GAME_SCRIPT.read_text()
+    css = (ROOT / "static/calculatorx/style.css").read_text()
+
+    assert 'id="themeToggleButton"' in html
+    assert '<abbr title="Écart-type">sd</abbr>' in html
+    assert "calculatorx:theme" in script
+    assert "prefers-color-scheme: light" in script
+    assert "document.documentElement.dataset.theme" in script
+    assert ':root[data-theme="light"]' in css
+    assert "@media (prefers-color-scheme: light)" in css
 
 
 def test_history_score_validation_uses_the_mode_specific_reserve_limit():
