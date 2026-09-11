@@ -4,14 +4,18 @@ from pathlib import Path
 ROOT = Path(__file__).parents[2]
 
 
-def test_native_width_keeps_orca_inside_the_control_column():
+def test_split_layout_makes_orca_prominent_without_leaving_control_column():
     css = (ROOT / "static/orquantix/style.css").read_text()
-    native_width_rules = css[css.index("@media (max-width: 720px)") :]
+    split_layout_rules = css[css.index("@media (min-width: 700px)") :]
 
-    assert ".game-controls .orca-avatar" in native_width_rules
-    assert "width: 72px;" in native_width_rules
-    assert ".game-controls .orca-dialog" in native_width_rules
-    assert "min-width: 0;" in native_width_rules
+    assert ".game-controls .orca-panel" in split_layout_rules
+    assert "flex-direction: column;" in split_layout_rules
+    assert ".game-controls .orca-avatar" in split_layout_rules
+    assert "width: min(190px, 82%);" in split_layout_rules
+    assert ".game-controls .orca-dialog" in split_layout_rules
+    assert "min-width: 0;" in split_layout_rules
+    assert ".game-controls .orca-bubble" in split_layout_rules
+    assert "width: 100%;" in split_layout_rules
 
 
 def test_guess_input_can_shrink_beside_the_submit_button():

@@ -1252,19 +1252,22 @@ body.dyslexic-mode .orca-tool[data-orca-tool="neutral"] {
   }
 }
 
-@media (min-width: 700px) and (max-width: 720px) {
+@media (min-width: 700px) {
   .game-controls .orca-panel {
+    flex-direction: column;
+    align-items: stretch;
     gap: 0.55rem;
-    padding: 0.7rem;
+    padding: 0.55rem;
   }
 
   .game-controls .orca-avatar {
-    width: 72px;
-    min-height: 120px;
+    align-self: center;
+    width: min(190px, 82%);
+    min-height: 210px;
   }
 
   .game-controls .orca-avatar-image {
-    max-width: 70px;
+    max-width: 184px;
   }
 
   .game-controls .orca-dialog {
@@ -1272,8 +1275,11 @@ body.dyslexic-mode .orca-tool[data-orca-tool="neutral"] {
   }
 
   .game-controls .orca-bubble {
+    width: 100%;
     min-width: 0;
-    padding: 0.7rem;
+    min-height: 96px;
+    padding: 0.8rem;
+    font-size: 1rem;
     overflow-wrap: anywhere;
   }
 }
