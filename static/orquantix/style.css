@@ -688,21 +688,46 @@ body::before {
 
 /* ===== Game screen ===== */
 .game-screen {
-  max-width: 640px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1.25rem;
   position: relative;
   z-index: 1;
 }
 
+.game-workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.68fr) minmax(380px, 1.32fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.game-controls {
+  position: sticky;
+  top: 1rem;
+  min-width: 0;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  padding-right: 0.2rem;
+  scrollbar-width: thin;
+}
+
+.guess-history-panel {
+  min-width: 0;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
 /* ===== Header ===== */
 .game-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.25rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+.game-header .app-title {
+  font-size: clamp(1.7rem, 3vw, 2.8rem);
+  letter-spacing: 0.07em;
+  white-space: nowrap;
 }
 .app-title {
   font-family: "Avenir Next", "Helvetica Neue", "Trebuchet MS", sans-serif;
@@ -716,9 +741,11 @@ body::before {
 }
 .game-meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.25rem;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+  margin-top: 0.4rem;
 }
 .daily-difficulty {
   font-size: 0.9rem;
@@ -749,14 +776,32 @@ body::before {
   border-color: rgba(255, 157, 108, 0.4);
 }
 
+.game-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.game-actions .new-game-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.35rem 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.72rem;
+}
+
 /* ===== Guess form ===== */
 .guess-form {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.55rem;
 }
 .guess-input {
   flex: 1;
+  min-width: 0;
   padding: 0.5rem 0.75rem;
   font-size: 1rem;
   background: rgba(255, 255, 255, 0.05);
@@ -768,7 +813,7 @@ body::before {
 .guess-input::placeholder { color: rgba(159, 184, 204, 0.6); }
 .guess-input:focus { border-color: var(--abysse-cyan); }
 .submit-btn {
-  padding: 0.5rem 1.25rem;
+  padding: 0.5rem 0.8rem;
   font-size: 1rem;
   cursor: pointer;
   background: var(--abysse-cyan);
@@ -820,14 +865,14 @@ body::before {
 .orca-tools {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-bottom: 0.85rem;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
 }
 .orca-tool {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 0.75rem;
+  gap: 0.3rem;
+  padding: 0.35rem 0.55rem;
   border: 1px solid rgba(127, 227, 240, 0.22);
   border-radius: 999px;
   background: rgba(127, 227, 240, 0.05);
@@ -854,17 +899,17 @@ body::before {
   font-size: 1rem;
 }
 .orca-tool-label {
-  font-size: 0.85rem;
+  font-size: 0.72rem;
 }
 
 /* ===== Orca panel ===== */
 .orca-panel {
   display: flex;
   align-items: stretch;
-  gap: 1.2rem;
-  margin-bottom: 1rem;
-  min-height: 250px;
-  padding: 1.2rem 1.3rem;
+  gap: 0.7rem;
+  margin-bottom: 0;
+  min-height: 150px;
+  padding: 0.7rem;
   border-radius: 22px;
   background: rgba(127, 227, 240, 0.07);
   border: 1px solid rgba(127, 227, 240, 0.16);
@@ -878,7 +923,7 @@ body::before {
 .orca-avatar {
   flex: 0 0 auto;
   position: relative;
-  width: 190px;
+  width: 96px;
   min-height: 100%;
   display: grid;
   align-items: end;
@@ -893,7 +938,7 @@ body::before {
 .orca-avatar-image {
   display: block;
   width: 100%;
-  max-width: 180px;
+  max-width: 92px;
   height: auto;
   object-fit: contain;
   filter: drop-shadow(0 0 16px rgba(127, 227, 240, 0.35)) drop-shadow(0 12px 18px rgba(2, 8, 18, 0.5));
@@ -933,10 +978,10 @@ body::before {
 }
 .orca-bubble {
   color: #e8f1f8;
-  min-height: 132px;
-  padding: 1rem 1.15rem;
+  min-height: 78px;
+  padding: 0.75rem 0.85rem;
   line-height: 1.5;
-  font-size: 1.12rem;
+  font-size: 0.92rem;
   background: rgba(6, 13, 24, 0.4);
   border-radius: 18px;
   border: 1px solid rgba(127, 227, 240, 0.14);
@@ -1009,7 +1054,7 @@ body.dyslexic-mode .orca-tool[data-orca-tool="neutral"] {
 .guess-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
 }
 .guess-table th {
   text-align: left;
@@ -1020,6 +1065,10 @@ body.dyslexic-mode .orca-tool[data-orca-tool="neutral"] {
   opacity: 0.6;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #071522;
 }
 .guess-row td {
   padding: 0.4rem 0.6rem;
@@ -1035,7 +1084,7 @@ body.dyslexic-mode .orca-tool[data-orca-tool="neutral"] {
 .guess-word  { font-weight: 500; color: #e8f1f8; }
 
 /* ===== Colonnes température et rang ===== */
-.guess-progress { min-width: 190px; }
+.guess-progress { min-width: 120px; }
 
 .progress-row {
   display: flex;
@@ -1085,12 +1134,12 @@ body.dyslexic-mode .orca-tool[data-orca-tool="neutral"] {
 
 /* ===== Orca feedback ===== */
 .guess-orca {
-  min-width: 70px;
+  min-width: 50px;
 }
 .orca-emoji {
   display: block;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
   filter: drop-shadow(0 0 6px rgba(127, 227, 240, 0.3));
 }
@@ -1200,5 +1249,49 @@ body.dyslexic-mode .orca-tool[data-orca-tool="neutral"] {
 
   .guess-orca {
     min-width: 56px;
+  }
+}
+
+@media (min-width: 700px) and (max-width: 720px) {
+  .game-controls .orca-panel {
+    gap: 0.55rem;
+    padding: 0.7rem;
+  }
+
+  .game-controls .orca-avatar {
+    width: 72px;
+    min-height: 120px;
+  }
+
+  .game-controls .orca-avatar-image {
+    max-width: 70px;
+  }
+
+  .game-controls .orca-dialog {
+    min-width: 0;
+  }
+
+  .game-controls .orca-bubble {
+    min-width: 0;
+    padding: 0.7rem;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 699px) {
+  .game-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .game-controls {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .guess-history-panel {
+    max-height: none;
+    overflow: visible;
   }
 }

@@ -53,16 +53,16 @@ function updateTimerDisplay() {
 function updateTimerButton() {
   const button = document.getElementById('timerBtn');
   if (timerRunning) {
-    button.textContent = 'Timer en cours';
+    button.textContent = 'Timer…';
     button.disabled = true;
     return;
   }
   if (timerCompletedMs !== null) {
-    button.textContent = 'Timer terminé';
+    button.textContent = 'Timer ✓';
     button.disabled = true;
     return;
   }
-  button.textContent = 'Mode timer';
+  button.textContent = 'Timer';
   button.disabled = false;
 }
 
@@ -192,7 +192,7 @@ function activateGame() {
       document.getElementById('guessInput').focus();
       document.body.classList.toggle('dyslexic-mode', dyslexicMode);
       document.getElementById('dyslexicToggle').textContent =
-        'Mode dyslexique : ' + (dyslexicMode ? 'ON' : 'OFF');
+        'Dys. ' + (dyslexicMode ? 'ON' : 'OFF');
       document.getElementById('dyslexicToggle').classList.toggle('active', dyslexicMode);
       resetTimer();
       updateGiveUpButton();

@@ -54,6 +54,32 @@ def test_index_links_back_to_games(client):
     assert "Retour aux jeux" in page
 
 
+def test_index_separates_controls_from_guess_history(client):
+    page = client.get("/games/orquantix/").data.decode()
+
+    assert 'class="game-workspace"' in page
+    assert 'class="game-controls"' in page
+    assert 'class="guess-history-panel"' in page
+    assert page.index('class="game-controls"') < page.index(
+        'class="guess-history-panel"'
+    )
+    history = page[page.index('class="guess-history-panel"') :]
+    assert 'id="guessTable"' in history
+
+
+def test_index_groups_primary_actions_in_one_toolbar(client):
+    page = client.get("/games/orquantix/").data.decode()
+
+    assert 'class="game-actions"' in page
+    actions = page[
+        page.index('class="game-actions"') : page.index(
+            "</div>", page.index('class="game-actions"')
+        )
+    ]
+    for button_id in ("giveUpBtn", "timerBtn", "hintToggleBtn", "dyslexicToggle"):
+        assert f'id="{button_id}"' in actions
+
+
 def test_routes_are_namespaced_under_the_game(client):
     # Le préfixe évite la collision quand un quiz voudra son propre /guess.
     assert client.post("/games/orquantix/guess", json={"word": "chat"}).status_code == 200

@@ -110,7 +110,7 @@ function toggleDyslexic() {
   dyslexicMode = !dyslexicMode;
   localStorage.setItem('dyslexicMode', dyslexicMode);
   document.getElementById('dyslexicToggle').textContent =
-    'Mode dyslexique : ' + (dyslexicMode ? 'ON' : 'OFF');
+    'Dys. ' + (dyslexicMode ? 'ON' : 'OFF');
   document.getElementById('dyslexicToggle').classList.toggle('active', dyslexicMode);
   document.body.classList.toggle('dyslexic-mode', dyslexicMode);
   setOrcaState(currentOrcaMood, document.getElementById('orcaBubble').textContent || '...');

@@ -244,100 +244,99 @@
   <!-- ===== Game screen ===== -->
   <div class="game-screen" id="gameScreen" style="display:none">
 
-    <header class="game-header">
-      <h1 class="app-title">Orquantix</h1>
-      <div class="game-meta">
-        <span class="daily-difficulty" id="dailyDifficulty"></span>
-        <span class="timer-display" id="timerDisplay">Timer : --:--</span>
-        <button class="new-game-btn give-up-btn" id="giveUpBtn" onclick="giveUp()">
-          I give up
-        </button>
-        <button class="new-game-btn" id="timerBtn" onclick="startTimerMode()">
-          Mode timer
-        </button>
-        <button class="new-game-btn" id="hintToggleBtn" onclick="toggleHintPanel()">
-          Indices
-        </button>
-        <button class="new-game-btn dyslexic-toggle" id="dyslexicToggle" onclick="toggleDyslexic()">
-          Mode dyslexique : OFF
-        </button>
-      </div>
-    </header>
+    <div class="game-workspace">
+      <section class="game-controls" aria-label="Commandes Orquantix">
+        <header class="game-header">
+          <h1 class="app-title">Orquantix</h1>
+          <div class="game-meta">
+            <span class="daily-difficulty" id="dailyDifficulty"></span>
+            <span class="timer-display" id="timerDisplay">Timer : --:--</span>
+          </div>
+        </header>
 
-    <form class="guess-form" id="guessForm" onsubmit="submitGuess(event)">
-      <input
-        type="text"
-        id="guessInput"
-        class="guess-input"
-        placeholder="Proposez un mot…"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        spellcheck="false"
-      >
-      <button type="submit" class="submit-btn">Valider</button>
-    </form>
+        <form class="guess-form" id="guessForm" onsubmit="submitGuess(event)">
+          <input
+            type="text"
+            id="guessInput"
+            class="guess-input"
+            placeholder="Proposez un mot…"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+          >
+          <button type="submit" class="submit-btn">OK</button>
+        </form>
 
-    <p class="error-message" id="errorMessage" style="display:none"></p>
-
-    <div class="suggestion-box" id="suggestionBox" style="display:none">
-      Vouliez-vous dire <strong id="suggestionWord"></strong>&nbsp;?
-      <button class="suggestion-yes" onclick="acceptSuggestion()">Oui</button>
-      <button class="suggestion-no" onclick="dismissSuggestion()">Non</button>
-    </div>
-
-    <div class="hint-panel" id="hintPanel" style="display:none">
-      <button class="hint-btn" onclick="requestHint('first-letter')">Première lettre</button>
-      <button class="hint-btn hint-btn-elegant" onclick="requestHint('word-length')">Nombre de lettres</button>
-      <button class="hint-btn hint-btn-dirty" onclick="requestHint('better-word')">Mot plus proche</button>
-    </div>
-
-    <div class="orca-tools" id="orcaTools">
-      <div class="orca-tool" draggable="true" data-orca-tool="neutral">
-        <span class="orca-tool-icon" aria-hidden="true">💧</span>
-        <span class="orca-tool-label">Eau calme</span>
-      </div>
-      <div class="orca-tool" draggable="true" data-orca-tool="mute">
-        <span class="orca-tool-icon" aria-hidden="true">🩹</span>
-        <span class="orca-tool-label">Scotché</span>
-      </div>
-      <div class="orca-tool" draggable="true" data-orca-tool="trashtalk">
-        <span class="orca-tool-icon" aria-hidden="true">🧃</span>
-        <span class="orca-tool-label">Trash talk juice</span>
-      </div>
-      <div class="orca-tool orca-tool-hint" draggable="true" data-orca-tool="golden-fish">
-        <span class="orca-tool-icon" aria-hidden="true">🐟</span>
-        <span class="orca-tool-label">Poisson doré</span>
-      </div>
-    </div>
-
-    <div class="orca-panel orca-intrigued" id="orcaPanel">
-      <div class="orca-avatar" id="orcaAvatar" aria-hidden="true">
-        <img class="orca-avatar-image" id="orcaAvatarImage" src="/static/orca_assets/orque_base.png" alt="">
-        <span class="orca-accessory" id="orcaAccessory"></span>
-      </div>
-      <div class="orca-dialog">
-        <div class="orca-bubble" id="orcaBubble">Ola que tal</div>
-        <div class="orca-status">
-          <button class="orca-replay-btn" id="orcaReplayBtn" type="button" onclick="newGame()" style="display:none">
-            Rejouer
-          </button>
+        <div class="game-actions">
+          <button class="new-game-btn give-up-btn" id="giveUpBtn" onclick="giveUp()">Abandon</button>
+          <button class="new-game-btn" id="timerBtn" onclick="startTimerMode()">Timer</button>
+          <button class="new-game-btn" id="hintToggleBtn" onclick="toggleHintPanel()">Indices</button>
+          <button class="new-game-btn dyslexic-toggle" id="dyslexicToggle" onclick="toggleDyslexic()">Dys. OFF</button>
         </div>
-      </div>
-    </div>
 
-    <table class="guess-table" id="guessTable">
-      <thead>
-        <tr>
-          <th class="col-num">#</th>
-          <th class="col-word">Mot</th>
-          <th class="col-progress">Proximité</th>
-          <th class="col-rank">Rang</th>
-          <th class="col-orca">Orque</th>
-        </tr>
-      </thead>
-      <tbody id="guessTableBody"></tbody>
-    </table>
+        <p class="error-message" id="errorMessage" style="display:none"></p>
+
+        <div class="suggestion-box" id="suggestionBox" style="display:none">
+          Vouliez-vous dire <strong id="suggestionWord"></strong>&nbsp;?
+          <button class="suggestion-yes" onclick="acceptSuggestion()">Oui</button>
+          <button class="suggestion-no" onclick="dismissSuggestion()">Non</button>
+        </div>
+
+        <div class="hint-panel" id="hintPanel" style="display:none">
+          <button class="hint-btn" onclick="requestHint('first-letter')">Première lettre</button>
+          <button class="hint-btn hint-btn-elegant" onclick="requestHint('word-length')">Nombre de lettres</button>
+          <button class="hint-btn hint-btn-dirty" onclick="requestHint('better-word')">Mot plus proche</button>
+        </div>
+
+        <div class="orca-tools" id="orcaTools">
+          <div class="orca-tool" draggable="true" data-orca-tool="neutral">
+            <span class="orca-tool-icon" aria-hidden="true">💧</span>
+            <span class="orca-tool-label">Eau calme</span>
+          </div>
+          <div class="orca-tool" draggable="true" data-orca-tool="mute">
+            <span class="orca-tool-icon" aria-hidden="true">🩹</span>
+            <span class="orca-tool-label">Scotché</span>
+          </div>
+          <div class="orca-tool" draggable="true" data-orca-tool="trashtalk">
+            <span class="orca-tool-icon" aria-hidden="true">🧃</span>
+            <span class="orca-tool-label">Trash talk juice</span>
+          </div>
+          <div class="orca-tool orca-tool-hint" draggable="true" data-orca-tool="golden-fish">
+            <span class="orca-tool-icon" aria-hidden="true">🐟</span>
+            <span class="orca-tool-label">Poisson doré</span>
+          </div>
+        </div>
+
+        <div class="orca-panel orca-intrigued" id="orcaPanel">
+          <div class="orca-avatar" id="orcaAvatar" aria-hidden="true">
+            <img class="orca-avatar-image" id="orcaAvatarImage" src="/static/orca_assets/orque_base.png" alt="">
+            <span class="orca-accessory" id="orcaAccessory"></span>
+          </div>
+          <div class="orca-dialog">
+            <div class="orca-bubble" id="orcaBubble">Ola que tal</div>
+            <div class="orca-status">
+              <button class="orca-replay-btn" id="orcaReplayBtn" type="button" onclick="newGame()" style="display:none">Rejouer</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="guess-history-panel" aria-label="Historique des propositions">
+        <table class="guess-table" id="guessTable">
+          <thead>
+            <tr>
+              <th class="col-num">#</th>
+              <th class="col-word">Mot</th>
+              <th class="col-progress">Proximité</th>
+              <th class="col-rank">Rang</th>
+              <th class="col-orca">Orque</th>
+            </tr>
+          </thead>
+          <tbody id="guessTableBody"></tbody>
+        </table>
+      </section>
+    </div><!-- /.game-workspace -->
 
   </div><!-- /.game-screen -->
 
