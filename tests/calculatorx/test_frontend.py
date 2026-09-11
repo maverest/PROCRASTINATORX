@@ -12,6 +12,7 @@ def test_template_exposes_v2_panels_and_controls():
     for element_id in (
         "modePanel",
         "settingsPanel",
+        "readyPanel",
         "gamePanel",
         "resultPanel",
         "scoresPanel",
@@ -21,7 +22,10 @@ def test_template_exposes_v2_panels_and_controls():
         "scoresButton",
         "resetClassicButton",
         "startCustomButton",
+        "startButton",
+        "readyBackButton",
         "stopButton",
+        "chartToggleButton",
         "retryButton",
         "clearHistoryButton",
         "answerInput",
@@ -30,6 +34,7 @@ def test_template_exposes_v2_panels_and_controls():
         "scoreValue",
         "projectedScore",
         "responseChart",
+        "responseFigure",
         "operationSummaries",
         "settingsError",
         "resultError",
@@ -37,11 +42,69 @@ def test_template_exposes_v2_panels_and_controls():
     ):
         assert f'id="{element_id}"' in html
     assert 'aria-label="Arrêter la séance"' in html
-    assert ">■<" in html
+    assert ">■ Stop<" in html
     assert '<script src="/static/calculatorx/chart.js" defer></script>' in html
     assert '<script src="/static/calculatorx/game.js" defer></script>' in html
     assert html.index('/static/calculatorx/chart.js') < html.index('/static/calculatorx/game.js')
     assert "<script>" not in html
+
+
+def test_home_groups_modes_online_scores_and_best_first_local_history():
+    html = (ROOT / "templates/calculatorx/index.html").read_text()
+    script = GAME_SCRIPT.read_text()
+    mode_panel = html[html.index('id="modePanel"') : html.index('id="settingsPanel"')]
+    mode_actions = mode_panel[
+        mode_panel.index('class="mode-actions"') : mode_panel.index('class="online-score-row"')
+    ]
+
+    assert mode_actions.index('id="classicButton"') < mode_actions.index('id="constanceButton"')
+    assert mode_actions.index('id="constanceButton"') < mode_actions.index('id="customButton"')
+    assert 'id="scoresButton"' not in mode_actions
+    assert mode_panel.index('id="scoresButton"') < mode_panel.index('id="historyList"')
+    assert "sessions.slice().sort((left, right) =>" in script
+    assert "right.score - left.score" in script
+
+
+def test_mode_selection_opens_a_start_screen_before_requesting_a_session():
+    script = GAME_SCRIPT.read_text()
+    select_mode = script[script.index("function selectMode") : script.index("function handleAnswer")]
+    start_handler = script[script.index("ui.startButton.addEventListener") :]
+
+    assert "showReadyPanel();" in select_mode
+    assert "prepareRound();" not in select_mode
+    assert "ui.startButton.addEventListener('click', prepareRound);" in start_handler
+
+
+def test_game_keeps_stop_below_the_answer_and_can_toggle_the_live_chart():
+    html = (ROOT / "templates/calculatorx/index.html").read_text()
+    script = GAME_SCRIPT.read_text()
+    game_panel = html[html.index('id="gamePanel"') : html.index('id="resultPanel"')]
+
+    assert game_panel.index('id="scoreValue"') < game_panel.index('id="timerValue"')
+    assert game_panel.index('id="timerValue"') < game_panel.index('id="problemText"')
+    assert game_panel.index('id="answerInput"') < game_panel.index('id="stopButton"')
+    assert game_panel.index('id="stopButton"') < game_panel.index('id="responseFigure"')
+    assert "function setLiveChartVisible" in script
+    assert "ui.chartToggleButton.addEventListener" in script
+
+
+def test_custom_actions_share_one_framed_footer():
+    html = (ROOT / "templates/calculatorx/index.html").read_text()
+    settings_panel = html[html.index('id="settingsPanel"') : html.index('id="readyPanel"')]
+    actions = settings_panel[
+        settings_panel.index('class="settings-actions"') : settings_panel.index('</div>', settings_panel.index('class="settings-actions"'))
+    ]
+
+    assert 'id="settingsBackButton"' in actions
+    assert 'id="resetClassicButton"' in actions
+    assert 'id="startCustomButton"' in actions
+
+
+def test_custom_duration_places_its_unit_after_the_value():
+    html = (ROOT / "templates/calculatorx/index.html").read_text()
+    duration = html[html.index('class="duration-field"') : html.index('</label>', html.index('class="duration-field"'))]
+
+    assert duration.index('id="customDuration"') < duration.index('<span aria-hidden="true">s</span>')
 
 
 def test_game_script_uses_absolute_deadline_and_round_token():
@@ -175,15 +238,16 @@ def test_successful_history_delete_invalidates_all_predelete_reads():
     assert "const generation = state.historyGeneration;" in load_history
     assert "generation !== state.historyGeneration" in load_history
     assert "++state.historyGeneration;" in clear_history
-    assert "if (!ui.scores.hidden) loadHistory();" in clear_history
+    assert "if (!ui.mode.hidden) loadHistory();" in clear_history
+    assert "token === state.historyToken && !ui.mode.hidden" in clear_history
 
 
-def test_scores_screen_exposes_an_accessible_history_error():
+def test_home_screen_exposes_an_accessible_history_error():
     html = (ROOT / "templates/calculatorx/index.html").read_text()
-    scores_panel = html[html.index('id="scoresPanel"') : html.index("</section>", html.index('id="scoresPanel"'))]
+    mode_panel = html[html.index('id="modePanel"') : html.index('id="settingsPanel"')]
 
-    assert 'id="historyError"' in scores_panel
-    assert 'role="alert"' in scores_panel
+    assert 'id="historyError"' in mode_panel
+    assert 'role="alert"' in mode_panel
 
 
 def test_game_style_is_speed_oriented_and_reduced_motion_safe():

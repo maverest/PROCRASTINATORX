@@ -15,24 +15,37 @@
 
     <section class="panel mode-panel" id="modePanel" aria-labelledby="modeTitle">
       <h1 id="modeTitle">CalculatorX</h1>
-      <div class="mode-actions" aria-label="Choisir un mode">
-        <button class="mode-button mode-button--primary" id="classicButton" type="button">Classique</button>
-        <button class="mode-button" id="customButton" type="button">Perso</button>
-        <button class="mode-button" id="constanceButton" type="button">Constance</button>
-        <button class="mode-button" id="scoresButton" type="button">Scores</button>
+      <div class="mode-picker">
+        <span class="section-label">Mode</span>
+        <div class="mode-actions" aria-label="Choisir un mode">
+          <button class="mode-button mode-button--primary" id="classicButton" type="button">Classique</button>
+          <button class="mode-button" id="constanceButton" type="button">Constance</button>
+          <button class="mode-button" id="customButton" type="button">Perso</button>
+        </div>
       </div>
-      <p class="error-message" id="errorMessage" role="alert" hidden></p>
+      <div class="online-score-row">
+        <button class="mode-button" id="scoresButton" type="button">Scores en ligne <span aria-hidden="true">→</span></button>
+      </div>
+      <section class="home-history" aria-labelledby="historyTitle">
+        <header class="history-heading">
+          <h2 id="historyTitle">Historique</h2>
+          <span>Meilleur d’abord</span>
+        </header>
+        <ol class="history-list" id="historyList" aria-live="polite"></ol>
+        <p class="error-message" id="historyError" role="alert" hidden></p>
+        <button class="text-button text-button--danger" id="clearHistoryButton" type="button">Effacer</button>
+      </section>
     </section>
 
     <section class="panel settings-panel" id="settingsPanel" aria-labelledby="settingsTitle" hidden>
       <header class="panel-heading">
         <h2 id="settingsTitle">Perso</h2>
-        <button class="text-button" type="button" data-panel="modes">Retour</button>
       </header>
       <form id="customForm" class="settings-form">
         <p class="error-message" id="settingsError" role="alert" hidden></p>
-        <label class="duration-field" for="customDuration">s
+        <label class="duration-field" for="customDuration">
           <input id="customDuration" name="duration_seconds" type="number" min="1" max="3600" value="120" inputmode="numeric" required>
+          <span aria-hidden="true">s</span>
         </label>
 
         <fieldset class="operation-fields">
@@ -66,25 +79,42 @@
         </fieldset>
 
         <div class="settings-actions">
+          <button class="text-button" id="settingsBackButton" type="button" data-panel="modes">← Retour</button>
           <button class="text-button" id="resetClassicButton" type="button">Reset</button>
           <button class="mode-button mode-button--primary" id="startCustomButton" type="submit">Go</button>
         </div>
       </form>
     </section>
 
+    <section class="panel ready-panel" id="readyPanel" aria-labelledby="readyModeValue" hidden>
+      <div class="ready-mode">
+        <h2 id="readyModeValue">Classique</h2>
+        <p id="readyDurationValue">120 s</p>
+      </div>
+      <button class="start-button" id="startButton" type="button">Start</button>
+      <button class="text-button" id="readyBackButton" type="button" data-panel="modes">← Retour</button>
+      <p class="error-message" id="errorMessage" role="alert" hidden></p>
+    </section>
+
     <section class="panel game-panel" id="gamePanel" aria-labelledby="gameTitle" hidden>
       <h2 class="visually-hidden" id="gameTitle">Partie en cours</h2>
-      <header class="game-stats">
-        <p class="active-mode" id="activeMode">Classique</p>
-        <p><span class="visually-hidden">Temps restant </span><strong id="timerValue">120</strong><span aria-hidden="true">s</span></p>
-        <p><span class="visually-hidden">Score </span><strong id="scoreValue">0</strong></p>
-        <p class="projected-score" id="projectedScore" aria-live="polite" hidden>≈0</p>
-        <button id="stopButton" type="button" aria-label="Arrêter la séance">■</button>
-      </header>
-      <p class="problem-text" id="problemText" aria-live="polite"></p>
-      <label class="visually-hidden" for="answerInput">Réponse</label>
-      <input id="answerInput" inputmode="numeric" autocomplete="off" pattern="[0-9]*" disabled>
-      <figure class="response-figure" aria-labelledby="chartTitle">
+      <p class="active-mode" id="activeMode">Classique</p>
+      <div class="game-focus">
+        <div class="score-display">
+          <span>Score</span>
+          <strong id="scoreValue">0</strong>
+          <span class="projected-score" id="projectedScore" aria-live="polite" hidden>≈0</span>
+        </div>
+        <p class="timer-display"><span class="visually-hidden">Temps restant </span><strong id="timerValue">120</strong><span aria-hidden="true">s</span></p>
+        <p class="problem-text" id="problemText" aria-live="polite"></p>
+        <label class="visually-hidden" for="answerInput">Réponse</label>
+        <input id="answerInput" inputmode="numeric" autocomplete="off" pattern="[0-9]*" disabled>
+        <div class="game-actions">
+          <button id="stopButton" type="button" aria-label="Arrêter la séance">■ Stop</button>
+          <button id="chartToggleButton" type="button" aria-expanded="true" aria-controls="responseFigure">Courbe ↑</button>
+        </div>
+      </div>
+      <figure class="response-figure" id="responseFigure" aria-labelledby="chartTitle">
         <figcaption class="visually-hidden" id="chartTitle">Temps de réponse</figcaption>
         <div id="responseChart" aria-hidden="true"></div>
         <div class="operation-legend" aria-label="Légende des opérations">
@@ -111,12 +141,9 @@
 
     <section class="panel scores-panel" id="scoresPanel" aria-labelledby="scoresTitle" hidden>
       <header class="panel-heading">
-        <h2 id="scoresTitle">Scores</h2>
+        <h2 id="scoresTitle">Scores en ligne</h2>
         <button class="text-button" type="button" data-panel="modes">Retour</button>
       </header>
-      <ol class="history-list" id="historyList" aria-live="polite"></ol>
-      <p class="error-message" id="historyError" role="alert" hidden></p>
-      <button class="text-button text-button--danger" id="clearHistoryButton" type="button">Effacer</button>
       <section class="leaderboards" aria-label="Classements">
         <div class="leaderboard-tabs" role="tablist" aria-label="Mode du classement">
           <button class="text-button is-active" id="classicLeaderboardTab" type="button" role="tab" aria-selected="true" aria-controls="classicLeaderboard">120</button>

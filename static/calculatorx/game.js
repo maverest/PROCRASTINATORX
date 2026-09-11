@@ -2,7 +2,8 @@
   'use strict';
 
   const OPERATIONS = ['+', '−', '×', '÷'];
-  const PANELS = ['mode', 'settings', 'game', 'result', 'scores'];
+  const MODE_LABELS = {classic: 'Classique', custom: 'Perso', constance: 'Constance'};
+  const PANELS = ['mode', 'settings', 'ready', 'game', 'result', 'scores'];
   const STORAGE_KEYS = {
     mode: 'calculatorx:last-mode',
     customConfig: 'calculatorx:custom-config',
@@ -11,6 +12,7 @@
   const ui = {
     mode: document.getElementById('modePanel'),
     settings: document.getElementById('settingsPanel'),
+    ready: document.getElementById('readyPanel'),
     game: document.getElementById('gamePanel'),
     result: document.getElementById('resultPanel'),
     scores: document.getElementById('scoresPanel'),
@@ -31,8 +33,12 @@
     multiplicationRightMaximum: document.getElementById('multiplicationRightMaximum'),
     resetClassicButton: document.getElementById('resetClassicButton'),
     startCustomButton: document.getElementById('startCustomButton'),
+    startButton: document.getElementById('startButton'),
+    readyModeValue: document.getElementById('readyModeValue'),
+    readyDurationValue: document.getElementById('readyDurationValue'),
     retry: document.getElementById('retryButton'),
     stopButton: document.getElementById('stopButton'),
+    chartToggleButton: document.getElementById('chartToggleButton'),
     input: document.getElementById('answerInput'),
     problem: document.getElementById('problemText'),
     timer: document.getElementById('timerValue'),
@@ -41,6 +47,7 @@
     projectedScore: document.getElementById('projectedScore'),
     finalScore: document.getElementById('finalScore'),
     responseChart: document.getElementById('responseChart'),
+    responseFigure: document.getElementById('responseFigure'),
     resultChart: document.getElementById('resultChart'),
     operationSummaries: document.getElementById('operationSummaries'),
     error: document.getElementById('errorMessage'),
@@ -178,7 +185,7 @@
 
   function setPreparing(preparing) {
     state.preparing = preparing;
-    [ui.classicButton, ui.constanceButton, ui.startCustomButton, ui.retry].forEach((button) => {
+    [ui.classicButton, ui.constanceButton, ui.startCustomButton, ui.startButton, ui.retry].forEach((button) => {
       button.disabled = preparing;
     });
   }
@@ -194,8 +201,8 @@
     closeProfilePicker({restoreFocus: false});
     ++state.historyToken;
     showPanel(panel);
+    if (panel === ui.mode) loadHistory();
     if (panel === ui.scores) {
-      loadHistory();
       selectLeaderboard(state.leaderboardMode);
     }
   }
@@ -540,7 +547,10 @@
 
   function renderHistory(sessions) {
     ui.historyList.replaceChildren();
-    if (sessions.length === 0) {
+    const orderedSessions = sessions.slice().sort((left, right) => (
+      right.score - left.score || right.played_at.localeCompare(left.played_at)
+    ));
+    if (orderedSessions.length === 0) {
       const empty = document.createElement('li');
       empty.className = 'history-empty';
       empty.textContent = 'Aucun score.';
@@ -549,11 +559,19 @@
       return;
     }
 
-    sessions.forEach((session) => {
+    orderedSessions.forEach((session) => {
       const entry = document.createElement('li');
+      const score = document.createElement('strong');
       const details = document.createElement('span');
-      details.textContent = `${formatHistoryDate(session.played_at)} · ${session.mode} · ${session.duration_seconds}s · ${session.score}`;
-      entry.append(details);
+      const playedAt = document.createElement('time');
+      score.className = 'history-score';
+      score.textContent = String(session.score);
+      details.className = 'history-details';
+      details.textContent = `${MODE_LABELS[session.mode]} · ${session.duration_seconds}s`;
+      playedAt.className = 'history-date';
+      playedAt.dateTime = session.played_at;
+      playedAt.textContent = formatHistoryDate(session.played_at);
+      entry.append(score, details, playedAt);
 
       if (session.ended_reason === 'stopped' || session.submission_status === 'pending') {
         const marks = document.createElement('span');
@@ -602,14 +620,14 @@
       if (
         token !== state.historyToken
         || generation !== state.historyGeneration
-        || ui.scores.hidden
+        || ui.mode.hidden
       ) return;
       renderHistory(payload.sessions);
     } catch (_error) {
       if (
         token === state.historyToken
         && generation === state.historyGeneration
-        && !ui.scores.hidden
+        && !ui.mode.hidden
       ) {
         showHistoryError('Historique indisponible.');
       }
@@ -628,9 +646,9 @@
       const response = await fetch('/games/calculatorx/history', {method: 'DELETE'});
       if (!response.ok) throw new Error('history unavailable');
       ++state.historyGeneration;
-      if (!ui.scores.hidden) loadHistory();
+      if (!ui.mode.hidden) loadHistory();
     } catch (_error) {
-      if (token === state.historyToken && !ui.scores.hidden) {
+      if (token === state.historyToken && !ui.mode.hidden) {
         showHistoryError('Effacement impossible.');
         ui.clearHistoryButton.disabled = false;
       }
@@ -757,6 +775,12 @@
     window.CalculatorXChart.render(ui.responseChart, state.samples, {limit: 30});
   }
 
+  function setLiveChartVisible(visible) {
+    ui.responseFigure.hidden = !visible;
+    ui.chartToggleButton.textContent = visible ? 'Courbe ↑' : 'Courbe ↓';
+    ui.chartToggleButton.setAttribute('aria-expanded', String(visible));
+  }
+
   function updateProjection(now) {
     if (state.score < 3) {
       ui.projectedScore.hidden = true;
@@ -865,7 +889,7 @@
     state.score = 0;
     state.samples = [];
     state.durationSeconds = payload.duration_seconds;
-    ui.activeMode.textContent = {classic: 'Classique', custom: 'Perso', constance: 'Constance'}[payload.mode];
+    ui.activeMode.textContent = MODE_LABELS[payload.mode];
     state.roundStartedAt = now;
     state.deadline = now + payload.duration_seconds * 1000;
     state.endedReason = null;
@@ -877,6 +901,7 @@
     ui.timer.textContent = String(payload.duration_seconds);
     ui.projectedScore.hidden = true;
     ui.input.disabled = false;
+    setLiveChartVisible(true);
     window.CalculatorXChart.clear(ui.responseChart);
     window.CalculatorXChart.clear(ui.resultChart);
     renderSummaries({});
@@ -897,9 +922,9 @@
       showSettingsError(message, field);
       return;
     }
-    showPanel(ui.mode);
+    showPanel(ui.ready);
     showError(message);
-    ui.classicButton.focus();
+    ui.startButton.focus();
   }
 
   function prepareRound() {
@@ -939,7 +964,15 @@
   function selectMode(mode) {
     state.mode = mode;
     state.config = {mode};
-    prepareRound();
+    showReadyPanel();
+  }
+
+  function showReadyPanel() {
+    clearError();
+    ui.readyModeValue.textContent = MODE_LABELS[state.mode];
+    ui.readyDurationValue.textContent = `${state.config.duration_seconds || 120} s`;
+    showPanel(ui.ready);
+    ui.startButton.focus();
   }
 
   function handleAnswer() {
@@ -1000,14 +1033,18 @@
       const config = configFromForm();
       state.mode = 'custom';
       state.config = config;
-      prepareRound();
+      showReadyPanel();
     } catch (error) {
       if (error instanceof SettingsError) showSettingsError(error.message, error.field);
       else showSettingsError('Réglages invalides.', null);
     }
   });
+  ui.startButton.addEventListener('click', prepareRound);
   ui.retry.addEventListener('click', prepareRound);
   ui.stopButton.addEventListener('click', () => finishRound(state.roundToken, 'stopped'));
+  ui.chartToggleButton.addEventListener('click', () => {
+    setLiveChartVisible(ui.responseFigure.hidden);
+  });
   ui.input.addEventListener('input', handleAnswer);
   document.querySelectorAll('[data-panel]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -1051,11 +1088,12 @@
     if (handleProfilePickerKeydown(event)) return;
     if (event.key !== 'Enter' || state.playing || state.preparing || state.finishing) return;
     if (event.target.closest('a, button, input, select, textarea, [role="button"]')) return;
-    if (ui.mode.hidden && ui.result.hidden) return;
+    if (ui.ready.hidden && ui.result.hidden) return;
     event.preventDefault();
     prepareRound();
   });
 
   loadPreferences();
   showPanel(ui.mode);
+  loadHistory();
 })();

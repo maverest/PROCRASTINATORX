@@ -34,7 +34,7 @@ button { touch-action: manipulation; }
   padding: 20px 0 48px;
 }
 
-.calculatorx-nav, .panel-heading, .game-stats, .settings-actions, .result-actions {
+.calculatorx-nav, .panel-heading, .settings-actions, .result-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -43,16 +43,21 @@ button { touch-action: manipulation; }
 
 .calculatorx-nav { color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .calculatorx-nav a, .text-button { color: var(--muted); }
-.calculatorx-nav a:focus-visible, .text-button:focus-visible, .mode-button:focus-visible, #stopButton:focus-visible, input:focus-visible, .profile-button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.calculatorx-nav a:focus-visible, .text-button:focus-visible, .mode-button:focus-visible, .start-button:focus-visible, #stopButton:focus-visible, #chartToggleButton:focus-visible, input:focus-visible, .profile-button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 
 .panel { margin-top: clamp(52px, 13vh, 128px); }
-.mode-panel { max-width: 530px; margin-right: auto; margin-left: auto; text-align: center; }
+.mode-panel { max-width: 600px; margin-right: auto; margin-left: auto; }
+.mode-panel h1 { text-align: center; }
 h1, h2, p { margin: 0; }
 h1 { font-size: clamp(2.4rem, 10vw, 5rem); font-weight: 750; letter-spacing: -.07em; }
 h2 { font-size: clamp(1.35rem, 4vw, 2rem); font-weight: 700; letter-spacing: -.045em; }
 
-.mode-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 36px; }
-.mode-button, .text-button, #stopButton { border: 0; cursor: pointer; }
+.mode-picker { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 36px; }
+.section-label { color: var(--muted); font-size: .76rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.mode-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.online-score-row { margin-top: 12px; }
+.online-score-row .mode-button { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.mode-button, .text-button, .start-button, #stopButton, #chartToggleButton { border: 0; cursor: pointer; }
 .mode-button { min-height: 48px; padding: 10px 14px; color: var(--text); background: var(--panel-raised); border: 1px solid var(--line); border-radius: 10px; font-weight: 700; }
 .mode-button--primary { color: #151614; background: var(--accent); border-color: var(--accent); }
 .text-button { min-height: 44px; padding: 8px 0; background: transparent; font-size: .8rem; font-weight: 700; }
@@ -61,12 +66,13 @@ h2 { font-size: clamp(1.35rem, 4vw, 2rem); font-weight: 700; letter-spacing: -.0
 .settings-form > .error-message { margin: 0; }
 
 .settings-panel, .scores-panel { max-width: 600px; margin-right: auto; margin-left: auto; }
-.settings-form { display: grid; gap: 22px; margin-top: 28px; }
-.duration-field { display: flex; align-items: center; justify-content: flex-end; gap: 8px; color: var(--muted); font-size: .85rem; }
+.settings-form { display: grid; gap: 0; margin-top: 28px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+.settings-form > .error-message { padding: 0 18px; }
+.duration-field { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 16px 18px; color: var(--muted); border-bottom: 1px solid var(--line); font-size: .85rem; }
 input[type="number"] { width: 76px; min-height: 44px; padding: 6px 8px; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 7px; font-variant-numeric: tabular-nums; text-align: center; }
 fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 legend { margin-bottom: 10px; color: var(--muted); font-size: .76rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
-.operation-fields { display: flex; flex-wrap: wrap; gap: 8px; }
+.operation-fields { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
 .operation-fields legend { width: 100%; }
 .operation-fields label { display: grid; place-items: center; width: 46px; height: 44px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
 .operation-fields input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
@@ -77,23 +83,40 @@ legend { margin-bottom: 10px; color: var(--muted); font-size: .76rem; font-weigh
 .operator--subtract { color: var(--subtract); }
 .operator--multiply { color: var(--multiply); }
 .operator--divide { color: var(--divide); }
-.range-fields { display: grid; gap: 12px; }
+.range-fields { display: grid; gap: 12px; padding: 16px 18px 18px; }
 .range-fields legend { margin-bottom: 0; }
 .range-group { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 6px; }
 .range-label { color: var(--muted); font-size: .78rem; font-weight: 700; }
 .range-group input { width: 100%; min-width: 0; }
 
-.game-panel { max-width: 680px; margin-right: auto; margin-left: auto; }
-.game-stats { min-height: 52px; padding: 0 2px; font-size: .95rem; font-variant-numeric: tabular-nums; }
-.game-stats strong { font-weight: 720; }
-.active-mode { color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-.projected-score { margin-left: auto; color: color-mix(in srgb, var(--accent) 65%, var(--muted)); font-size: .82rem; font-weight: 700; }
-#stopButton { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; color: var(--danger); background: transparent; border-radius: 50%; font-size: 28px; line-height: 1; }
-.problem-text { margin: clamp(56px, 14vh, 126px) 0 26px; font-size: clamp(3.5rem, 18vw, 8.5rem); font-weight: 650; letter-spacing: -.08em; line-height: .95; text-align: center; font-variant-numeric: tabular-nums; }
+.settings-actions { display: grid; grid-template-columns: 1fr 1fr 1.25fr; padding: 12px; background: var(--panel-raised); border-top: 1px solid var(--line); }
+
+.ready-panel { display: grid; justify-items: center; align-content: center; max-width: 600px; min-height: min(560px, calc(100vh - 180px)); margin: 28px auto 0; text-align: center; }
+.ready-panel[hidden] { display: none; }
+.ready-mode { display: grid; gap: 6px; margin-bottom: 44px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.ready-mode h2 { color: var(--muted); font-size: 1rem; letter-spacing: .08em; }
+.ready-mode p { font-size: .8rem; font-variant-numeric: tabular-nums; }
+.start-button { width: min(320px, 86%); min-height: 92px; color: #101216; background: var(--add); border: 1px solid var(--add); border-radius: 10px; font-size: 2rem; font-weight: 750; }
+.ready-panel > .text-button { margin-top: 18px; }
+
+.game-panel { max-width: 680px; margin: clamp(34px, 7vh, 68px) auto 0; }
+.active-mode { color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-align: center; text-transform: uppercase; }
+.game-focus { display: grid; justify-items: center; }
+.score-display { display: flex; align-items: baseline; gap: 9px; margin-top: 24px; color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.score-display strong { color: var(--text); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.projected-score { color: color-mix(in srgb, var(--accent) 55%, var(--muted)); font-size: .75rem; letter-spacing: 0; }
+.timer-display { display: flex; align-items: baseline; gap: 5px; margin-top: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.timer-display strong { color: var(--text); font-size: 2rem; font-weight: 600; }
+.timer-display span[aria-hidden="true"] { font-size: .85rem; }
+.problem-text { margin: clamp(34px, 6vh, 54px) 0 26px; font-size: clamp(3.5rem, 18vw, 8.5rem); font-weight: 650; letter-spacing: -.08em; line-height: .95; text-align: center; font-variant-numeric: tabular-nums; }
 #answerInput { display: block; width: min(300px, 100%); min-height: 66px; margin: 0 auto; padding: 8px 16px; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; font-size: 2rem; font-weight: 600; font-variant-numeric: tabular-nums; outline: 0; text-align: center; }
 #answerInput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent); }
+.game-actions { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+#stopButton, #chartToggleButton { min-height: 44px; padding: 8px 12px; color: var(--text); background: var(--panel-raised); border: 1px solid var(--line); border-radius: 8px; font-size: .82rem; font-weight: 700; }
+#stopButton { color: var(--danger); }
 
-.response-figure { margin: clamp(54px, 10vh, 100px) 0 0; }
+.response-figure { margin: 30px 0 0; }
+.response-figure[hidden] { display: none; }
 #responseChart, .response-figure--result { min-height: 160px; overflow: hidden; background: linear-gradient(180deg, rgba(255, 255, 255, .025), transparent); border-bottom: 1px solid var(--line); }
 .operation-legend { display: flex; justify-content: center; gap: 16px; padding-top: 12px; }
 .operation-legend .operator { font-size: 1rem; }
@@ -110,15 +133,21 @@ legend { margin-bottom: 10px; color: var(--muted); font-size: .76rem; font-weigh
 #submitScoreButton { color: var(--accent); font-size: 1.2rem; }
 
 .scores-panel { text-align: left; }
-.history-list { display: grid; gap: 8px; margin: 28px 0 12px; padding: 0; list-style: none; }
-.history-list li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; font-variant-numeric: tabular-nums; }
+.home-history { margin-top: 30px; }
+.history-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px; color: var(--muted); border-bottom: 1px solid var(--line); text-transform: uppercase; }
+.history-heading h2, .history-heading span { font-size: .72rem; font-weight: 700; letter-spacing: .07em; }
+.history-list { display: grid; margin: 0 0 4px; padding: 0; list-style: none; }
+.history-list li { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto auto auto; align-items: center; gap: 10px; min-height: 46px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.history-score { font-size: 1.2rem; }
+.history-details { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-date { color: var(--muted); font-size: .72rem; }
 .history-empty { color: var(--muted); }
 .history-marks { display: flex; flex: 0 0 auto; gap: 8px; color: var(--muted); }
 .history-pending { color: var(--accent); }
 .history-submit { min-height: 32px; padding: 2px 5px; color: var(--accent); font-size: 1.1rem; }
 .text-button:disabled { cursor: not-allowed; opacity: .42; }
 
-.leaderboards { margin-top: 36px; }
+.leaderboards { margin-top: 28px; }
 .leaderboard-tabs { display: flex; gap: 12px; border-bottom: 1px solid var(--line); }
 .leaderboard-tabs .text-button { min-width: 42px; color: var(--muted); }
 .leaderboard-tabs .text-button.is-active { color: var(--accent); border-bottom: 2px solid var(--accent); }
@@ -143,12 +172,16 @@ legend { margin-bottom: 10px; color: var(--muted); font-size: .76rem; font-weigh
 
 @media (max-width: 520px) {
   .calculatorx-shell { width: min(100% - 22px, 760px); padding-top: 14px; }
+  .mode-picker { grid-template-columns: 1fr; }
+  .mode-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .range-group { grid-template-columns: 34px minmax(0, 1fr) auto minmax(0, 1fr); }
   .range-group label:nth-of-type(3) { grid-column: 2; }
   .range-group > span[aria-hidden="true"]:nth-of-type(3) { grid-column: 3; }
   .range-group label:nth-of-type(4) { grid-column: 4; }
-  .problem-text { margin-top: 72px; }
-  .history-list li { align-items: center; }
+  .game-panel { margin-top: 34px; }
+  .problem-text { margin-top: 34px; }
+  .history-list li { grid-template-columns: 42px minmax(0, 1fr) auto auto; }
+  .history-date { grid-column: 2; }
   .leaderboard-list li { grid-template-columns: 28px minmax(0, 1fr) auto; }
 }
 
