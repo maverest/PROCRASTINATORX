@@ -20,12 +20,14 @@ def test_storage_records_only_session_summary(tmp_path):
         score=42,
         ended_reason="timeout",
         submission_status="pending",
+        elapsed_ms=90_000,
     )
 
     assert storage.list_sessions() == [session]
     assert not hasattr(session, "samples")
     assert session.mode == "classic"
     assert session.duration_seconds == 120
+    assert session.elapsed_ms == 90_000
     assert session.score == 42
     assert session.ended_reason == "timeout"
     assert session.submission_status == "pending"
@@ -134,6 +136,16 @@ def test_get_session_returns_summary_and_rejects_unknown_identifier(tmp_path):
     assert storage.get_session(session.id) == session
     with pytest.raises(StorageError, match="Séance introuvable"):
         storage.get_session(999)
+
+
+def test_storage_deletes_only_the_selected_session(tmp_path):
+    storage = CalculatorStorage(tmp_path / "calculatorx.sqlite3")
+    kept = storage.record_session("classic", 120, 11, "timeout", "pending")
+    deleted = storage.record_session("custom", 30, 4, "stopped", "not_applicable")
+
+    assert storage.delete_session(deleted.id) is True
+    assert storage.delete_session(deleted.id) is False
+    assert storage.list_sessions() == [kept]
 
 
 @pytest.mark.parametrize(
@@ -299,7 +311,9 @@ def test_profiles_migration_preserves_preexisting_session_history(tmp_path):
 
     storage = CalculatorStorage(database_path)
 
-    assert storage.list_sessions()[0].score == 42
+    legacy_session = storage.list_sessions()[0]
+    assert legacy_session.score == 42
+    assert legacy_session.elapsed_ms is None
     assert storage.create_profile("Mila").nickname == "Mila"
 
 

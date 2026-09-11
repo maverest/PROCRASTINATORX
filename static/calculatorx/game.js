@@ -309,7 +309,14 @@
       && typeof session.played_at === 'string'
       && ['classic', 'custom', 'constance'].includes(session.mode)
       && isIntegerInRange(session.duration_seconds, 1, 3600)
+      && (
+        session.elapsed_ms === null
+        || isIntegerInRange(session.elapsed_ms, 1, session.duration_seconds * 1000)
+      )
       && isIntegerInRange(session.score, 0, historyScoreLimit(session))
+      && typeof session.responses_per_second === 'number'
+      && Number.isFinite(session.responses_per_second)
+      && session.responses_per_second >= 0
       && ['timeout', 'stopped', 'exhausted'].includes(session.ended_reason)
       && ['not_applicable', 'pending', 'submitted'].includes(session.submission_status)
       && (session.nickname === null || typeof session.nickname === 'string');
@@ -560,6 +567,10 @@
     }).format(date);
   }
 
+  function formatResponseRate(rate) {
+    return rate.toFixed(2).replace('.', ',');
+  }
+
   function renderHistory(sessions) {
     ui.historyList.replaceChildren();
     const orderedSessions = sessions.slice().sort((left, right) => (
@@ -578,15 +589,19 @@
       const entry = document.createElement('li');
       const score = document.createElement('strong');
       const details = document.createElement('span');
+      const rate = document.createElement('span');
       const playedAt = document.createElement('time');
+      const actions = document.createElement('div');
       score.className = 'history-score';
       score.textContent = String(session.score);
       details.className = 'history-details';
       details.textContent = `${MODE_LABELS[session.mode]} · ${session.duration_seconds}s`;
+      rate.className = 'history-rate';
+      rate.textContent = `${formatResponseRate(session.responses_per_second)} rép/s`;
       playedAt.className = 'history-date';
       playedAt.dateTime = session.played_at;
       playedAt.textContent = formatHistoryDate(session.played_at);
-      entry.append(score, details, playedAt);
+      actions.className = 'history-actions';
 
       if (session.ended_reason === 'stopped' || session.submission_status === 'pending') {
         const marks = document.createElement('span');
@@ -604,7 +619,7 @@
           pending.setAttribute('aria-label', 'Réservé pour le classement');
           marks.append(pending);
         }
-        entry.append(marks);
+        actions.append(marks);
       }
       if (isPendingEligibleSession(session)) {
         const submit = document.createElement('button');
@@ -613,8 +628,16 @@
         submit.textContent = '+';
         submit.setAttribute('aria-label', 'Ajouter ce score au classement');
         submit.addEventListener('click', () => openProfilePicker(session, submit));
-        entry.append(submit);
+        actions.append(submit);
       }
+      const remove = document.createElement('button');
+      remove.className = 'text-button history-delete';
+      remove.type = 'button';
+      remove.textContent = '×';
+      remove.setAttribute('aria-label', 'Supprimer cette partie');
+      remove.addEventListener('click', () => deleteHistorySession(session, remove));
+      actions.append(remove);
+      entry.append(score, details, rate, playedAt, actions);
       ui.historyList.append(entry);
     });
     ui.clearHistoryButton.disabled = false;
@@ -666,6 +689,29 @@
       if (token === state.historyToken && !ui.mode.hidden) {
         showHistoryError('Effacement impossible.');
         ui.clearHistoryButton.disabled = false;
+      }
+    } finally {
+      if (token === state.historyToken) ui.historyList.removeAttribute('aria-busy');
+    }
+  }
+
+  async function deleteHistorySession(session, button) {
+    if (!window.confirm('Supprimer cette partie de l’historique local ?')) return;
+    const token = ++state.historyToken;
+    clearHistoryError();
+    button.disabled = true;
+    ui.historyList.setAttribute('aria-busy', 'true');
+    try {
+      const response = await fetch(`/games/calculatorx/history/${session.id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('history unavailable');
+      ++state.historyGeneration;
+      if (!ui.mode.hidden) loadHistory();
+    } catch (_error) {
+      if (token === state.historyToken && !ui.mode.hidden) {
+        showHistoryError('Suppression impossible.');
+        button.disabled = false;
       }
     } finally {
       if (token === state.historyToken) ui.historyList.removeAttribute('aria-busy');
@@ -855,6 +901,12 @@
     const resultPayload = {
       mode: state.mode,
       duration_seconds: state.durationSeconds,
+      elapsed_ms: reason === 'timeout'
+        ? state.durationSeconds * 1000
+        : Math.min(
+          state.durationSeconds * 1000,
+          Math.max(1, Math.round(performance.now() - state.roundStartedAt)),
+        ),
       score: state.score,
       ended_reason: reason,
       samples: state.samples.map((sample) => ({...sample})),

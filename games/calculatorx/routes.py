@@ -80,12 +80,13 @@ def build_blueprint(
                 score=result_data.score,
                 ended_reason=result_data.ended_reason,
                 submission_status=submission_status,
+                elapsed_ms=result_data.elapsed_ms,
             )
         except StorageError:
             return _storage_error()
         return jsonify(
             leaderboard_eligible=eligible,
-            session=asdict(session_record),
+            session=_session_payload(session_record),
             statistics={operator: asdict(summary) for operator, summary in statistics.items()},
         )
 
@@ -95,7 +96,17 @@ def build_blueprint(
             sessions = storage.list_sessions()
         except StorageError:
             return _storage_error()
-        return jsonify(sessions=[asdict(record) for record in sessions])
+        return jsonify(sessions=[_session_payload(record) for record in sessions])
+
+    @blueprint.delete("/history/<int:session_id>")
+    def delete_history_session(session_id: int):
+        try:
+            deleted = storage.delete_session(session_id)
+        except StorageError:
+            return _storage_error()
+        if not deleted:
+            return jsonify(error="Séance introuvable."), 404
+        return ("", 204)
 
     @blueprint.delete("/history")
     def clear_history():
@@ -159,24 +170,26 @@ def build_blueprint(
             if str(error) in {"Cette séance ne peut pas être envoyée.", "Profil introuvable."}:
                 return jsonify(error="Cette séance ne peut pas être envoyée."), 409
             return _storage_error()
-        return jsonify(score=record, session=asdict(submitted))
+        return jsonify(score=record, session=_session_payload(submitted))
 
     return blueprint
 
 
 class ResultData:
-    __slots__ = ("mode", "duration_seconds", "score", "ended_reason", "samples")
+    __slots__ = ("mode", "duration_seconds", "elapsed_ms", "score", "ended_reason", "samples")
 
     def __init__(
         self,
         mode: str,
         duration_seconds: int,
+        elapsed_ms: int,
         score: int,
         ended_reason: str,
         samples: list[ResponseSample],
     ) -> None:
         self.mode = mode
         self.duration_seconds = duration_seconds
+        self.elapsed_ms = elapsed_ms
         self.score = score
         self.ended_reason = ended_reason
         self.samples = samples
@@ -203,6 +216,9 @@ def _parse_result() -> ResultData:
     duration_seconds = _required_integer(payload, "duration_seconds", minimum=1, maximum=3600)
     if mode in ("classic", "constance") and duration_seconds != DURATION_SECONDS:
         raise RequestError("Ce mode dure 120 secondes.", "duration_seconds")
+    elapsed_ms = _required_integer(
+        payload, "elapsed_ms", minimum=1, maximum=duration_seconds * 1000
+    )
     score = _required_integer(
         payload, "score", minimum=0, maximum=_score_limit(mode, duration_seconds)
     )
@@ -216,7 +232,14 @@ def _parse_result() -> ResultData:
         samples = [ResponseSample.from_dict(sample) for sample in raw_samples]
     except ValueError as error:
         raise RequestError(str(error), "samples") from error
-    return ResultData(mode, duration_seconds, score, ended_reason, samples)
+    return ResultData(mode, duration_seconds, elapsed_ms, score, ended_reason, samples)
+
+
+def _session_payload(session: SessionRecord) -> dict[str, object]:
+    payload = asdict(session)
+    elapsed_ms = session.elapsed_ms or session.duration_seconds * 1000
+    payload["responses_per_second"] = session.score * 1000 / elapsed_ms
+    return payload
 
 
 def _required_choice(payload: dict[str, object], field: str, choices: tuple[str, ...]) -> str:

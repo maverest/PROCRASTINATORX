@@ -15,6 +15,7 @@ class SessionRecord:
     played_at: str
     mode: str
     duration_seconds: int
+    elapsed_ms: int | None
     score: int
     ended_reason: str
     submission_status: str
@@ -45,6 +46,7 @@ class CalculatorStorage:
         score: int,
         ended_reason: str,
         submission_status: str,
+        elapsed_ms: int | None = None,
     ) -> SessionRecord:
         played_at = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
         def record(connection: sqlite3.Connection) -> SessionRecord:
@@ -64,8 +66,23 @@ class CalculatorStorage:
                     submission_status,
                 ),
             )
+            if elapsed_ms is not None:
+                connection.execute(
+                    """
+                    INSERT INTO calculator_session_timings (session_id, elapsed_ms)
+                    VALUES (?, ?)
+                    """,
+                    (cursor.lastrowid, elapsed_ms),
+                )
             row = connection.execute(
-                "SELECT * FROM calculator_sessions WHERE id = ?", (cursor.lastrowid,)
+                """
+                SELECT sessions.*, timings.elapsed_ms
+                FROM calculator_sessions AS sessions
+                LEFT JOIN calculator_session_timings AS timings
+                  ON timings.session_id = sessions.id
+                WHERE sessions.id = ?
+                """,
+                (cursor.lastrowid,),
             ).fetchone()
             return self._record_from_row(row)
 
@@ -74,7 +91,13 @@ class CalculatorStorage:
     def list_sessions(self) -> list[SessionRecord]:
         def list_records(connection: sqlite3.Connection) -> list[SessionRecord]:
             rows = connection.execute(
-                "SELECT * FROM calculator_sessions ORDER BY played_at DESC, id DESC"
+                """
+                SELECT sessions.*, timings.elapsed_ms
+                FROM calculator_sessions AS sessions
+                LEFT JOIN calculator_session_timings AS timings
+                  ON timings.session_id = sessions.id
+                ORDER BY sessions.played_at DESC, sessions.id DESC
+                """
             ).fetchall()
             return [self._record_from_row(row) for row in rows]
 
@@ -83,13 +106,29 @@ class CalculatorStorage:
     def get_session(self, session_id: int) -> SessionRecord:
         def get(connection: sqlite3.Connection) -> SessionRecord:
             row = connection.execute(
-                "SELECT * FROM calculator_sessions WHERE id = ?", (session_id,)
+                """
+                SELECT sessions.*, timings.elapsed_ms
+                FROM calculator_sessions AS sessions
+                LEFT JOIN calculator_session_timings AS timings
+                  ON timings.session_id = sessions.id
+                WHERE sessions.id = ?
+                """,
+                (session_id,),
             ).fetchone()
             if row is None:
                 raise StorageError("Séance introuvable.")
             return self._record_from_row(row)
 
         return self._run(get)
+
+    def delete_session(self, session_id: int) -> bool:
+        def delete(connection: sqlite3.Connection) -> bool:
+            cursor = connection.execute(
+                "DELETE FROM calculator_sessions WHERE id = ?", (session_id,)
+            )
+            return cursor.rowcount == 1
+
+        return self._run(delete)
 
     def create_profile(self, nickname: str) -> Profile:
         display_name, normalized_name = self._normalize_nickname(nickname)
@@ -140,7 +179,14 @@ class CalculatorStorage:
 
         def mark(connection: sqlite3.Connection) -> SessionRecord:
             session_row = connection.execute(
-                "SELECT * FROM calculator_sessions WHERE id = ?", (session_id,)
+                """
+                SELECT sessions.*, timings.elapsed_ms
+                FROM calculator_sessions AS sessions
+                LEFT JOIN calculator_session_timings AS timings
+                  ON timings.session_id = sessions.id
+                WHERE sessions.id = ?
+                """,
+                (session_id,),
             ).fetchone()
             if session_row is None:
                 raise StorageError("Séance introuvable.")
@@ -174,7 +220,14 @@ class CalculatorStorage:
                 (used_at, profile_row["id"]),
             )
             row = connection.execute(
-                "SELECT * FROM calculator_sessions WHERE id = ?", (session_id,)
+                """
+                SELECT sessions.*, timings.elapsed_ms
+                FROM calculator_sessions AS sessions
+                LEFT JOIN calculator_session_timings AS timings
+                  ON timings.session_id = sessions.id
+                WHERE sessions.id = ?
+                """,
+                (session_id,),
             ).fetchone()
             return self._record_from_row(row)
 
@@ -221,6 +274,15 @@ class CalculatorStorage:
             )
             """
         )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS calculator_session_timings (
+              session_id INTEGER PRIMARY KEY
+                REFERENCES calculator_sessions(id) ON DELETE CASCADE,
+              elapsed_ms INTEGER NOT NULL CHECK (elapsed_ms > 0)
+            )
+            """
+        )
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.database_path)
@@ -235,6 +297,7 @@ class CalculatorStorage:
             played_at=row["played_at"],
             mode=row["mode"],
             duration_seconds=row["duration_seconds"],
+            elapsed_ms=row["elapsed_ms"],
             score=row["score"],
             ended_reason=row["ended_reason"],
             submission_status=row["submission_status"],

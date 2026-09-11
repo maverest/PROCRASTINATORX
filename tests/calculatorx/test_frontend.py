@@ -245,6 +245,17 @@ def test_scores_screen_loads_and_clears_local_history():
     assert "window.confirm" in script
 
 
+def test_history_displays_response_rate_and_deletes_one_confirmed_session():
+    script = GAME_SCRIPT.read_text()
+    css = (ROOT / "static/calculatorx/style.css").read_text()
+
+    assert "responses_per_second" in script
+    assert "rép/s" in script
+    assert "Supprimer cette partie de l’historique local ?" in script
+    assert "/games/calculatorx/history/${session.id}" in script
+    assert ".history-delete" in css
+
+
 def test_successful_history_delete_invalidates_all_predelete_reads():
     script = GAME_SCRIPT.read_text()
     load_history = script[

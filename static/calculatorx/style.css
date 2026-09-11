@@ -191,11 +191,14 @@ legend { margin-bottom: 10px; color: var(--muted); font-size: .76rem; font-weigh
 .history-list li { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto auto auto; align-items: center; gap: 10px; min-height: 46px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 .history-score { font-size: 1.2rem; }
 .history-details { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-rate { color: var(--text); font-size: .76rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .history-date { color: var(--muted); font-size: .72rem; }
+.history-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
 .history-empty { color: var(--muted); }
 .history-marks { display: flex; flex: 0 0 auto; gap: 8px; color: var(--muted); }
 .history-pending { color: var(--accent); }
 .history-submit { min-height: 32px; padding: 2px 5px; color: var(--accent); font-size: 1.1rem; }
+.history-delete { min-width: 28px; min-height: 32px; padding: 2px 5px; color: var(--danger); font-size: 1.05rem; }
 .text-button:disabled { cursor: not-allowed; opacity: .42; }
 
 .leaderboards { margin-top: 28px; }

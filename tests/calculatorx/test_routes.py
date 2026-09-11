@@ -28,6 +28,7 @@ def result_payload(*, ended_reason="timeout", mode="classic"):
     return {
         "mode": mode,
         "duration_seconds": 120,
+        "elapsed_ms": 120_000,
         "score": 2,
         "ended_reason": ended_reason,
         "samples": [
@@ -119,14 +120,16 @@ def test_invalid_config_returns_field_error(client):
 
 
 def test_stopped_result_is_not_leaderboard_eligible(client):
-    response = client.post(
-        "/games/calculatorx/result", json=result_payload(ended_reason="stopped")
-    )
+    result = result_payload(ended_reason="stopped")
+    result["elapsed_ms"] = 8_000
+    response = client.post("/games/calculatorx/result", json=result)
     payload = response.get_json()
 
     assert response.status_code == 200
     assert payload["leaderboard_eligible"] is False
     assert payload["session"]["submission_status"] == "not_applicable"
+    assert payload["session"]["elapsed_ms"] == 8_000
+    assert payload["session"]["responses_per_second"] == 0.25
 
 
 def test_finished_classic_result_recalculates_statistics_and_persists_summary(client):
@@ -180,6 +183,7 @@ def test_custom_result_accepts_a_score_at_its_reserve_limit(client):
     payload = {
         "mode": "custom",
         "duration_seconds": duration_seconds,
+        "elapsed_ms": duration_seconds * 1000,
         "score": score,
         "ended_reason": "stopped",
         "samples": [{"operator": "+", "elapsed_ms": 1000}] * score,
@@ -195,6 +199,7 @@ def test_custom_result_rejects_a_score_above_its_reserve_limit(client):
     payload = {
         "mode": "custom",
         "duration_seconds": 1,
+        "elapsed_ms": 1_000,
         "score": 513,
         "ended_reason": "stopped",
         "samples": [],
@@ -249,6 +254,45 @@ def test_history_excludes_samples_and_can_be_cleared(client):
     assert "samples" not in listed.get_json()["sessions"][0]
     assert client.delete("/games/calculatorx/history").status_code == 204
     assert client.get("/games/calculatorx/history").get_json() == {"sessions": []}
+
+
+def test_history_can_delete_one_session_without_touching_the_others(client):
+    first = client.post("/games/calculatorx/result", json=result_payload()).get_json()["session"]
+    second_payload = result_payload(mode="custom")
+    second_payload["duration_seconds"] = 30
+    second_payload["elapsed_ms"] = 10_000
+    second = client.post("/games/calculatorx/result", json=second_payload).get_json()["session"]
+
+    response = client.delete(f"/games/calculatorx/history/{first['id']}")
+
+    assert response.status_code == 204
+    assert client.get("/games/calculatorx/history").get_json()["sessions"] == [second]
+    assert client.delete(f"/games/calculatorx/history/{first['id']}").status_code == 404
+
+
+@pytest.mark.parametrize("elapsed_ms", [None, True, 0, 120_001])
+def test_result_rejects_missing_or_invalid_real_elapsed_time(client, elapsed_ms):
+    payload = result_payload()
+    if elapsed_ms is None:
+        del payload["elapsed_ms"]
+    else:
+        payload["elapsed_ms"] = elapsed_ms
+
+    response = client.post("/games/calculatorx/result", json=payload)
+
+    assert response.status_code == 400
+    assert response.get_json()["field"] == "elapsed_ms"
+
+
+def test_history_falls_back_to_configured_duration_for_legacy_sessions(leaderboard_context):
+    client, storage, _remote = leaderboard_context
+    session = storage.record_session("classic", 120, 30, "timeout", "pending")
+
+    listed = client.get("/games/calculatorx/history").get_json()["sessions"]
+
+    assert listed[0]["id"] == session.id
+    assert listed[0]["elapsed_ms"] is None
+    assert listed[0]["responses_per_second"] == 0.25
 
 
 def test_session_rejects_get(client):
