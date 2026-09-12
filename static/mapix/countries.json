@@ -1,0 +1,1419 @@
+[
+  {
+    "id": "ZA",
+    "name": "Afrique du Sud",
+    "continent": "africa",
+    "flag": "🇿🇦",
+    "aliases": []
+  },
+  {
+    "id": "DZ",
+    "name": "Algérie",
+    "continent": "africa",
+    "flag": "🇩🇿",
+    "aliases": []
+  },
+  {
+    "id": "AO",
+    "name": "Angola",
+    "continent": "africa",
+    "flag": "🇦🇴",
+    "aliases": []
+  },
+  {
+    "id": "BJ",
+    "name": "Bénin",
+    "continent": "africa",
+    "flag": "🇧🇯",
+    "aliases": []
+  },
+  {
+    "id": "BW",
+    "name": "Botswana",
+    "continent": "africa",
+    "flag": "🇧🇼",
+    "aliases": []
+  },
+  {
+    "id": "BF",
+    "name": "Burkina Faso",
+    "continent": "africa",
+    "flag": "🇧🇫",
+    "aliases": []
+  },
+  {
+    "id": "BI",
+    "name": "Burundi",
+    "continent": "africa",
+    "flag": "🇧🇮",
+    "aliases": []
+  },
+  {
+    "id": "CM",
+    "name": "Cameroun",
+    "continent": "africa",
+    "flag": "🇨🇲",
+    "aliases": []
+  },
+  {
+    "id": "CV",
+    "name": "Cap-Vert",
+    "continent": "africa",
+    "flag": "🇨🇻",
+    "aliases": []
+  },
+  {
+    "id": "KM",
+    "name": "Comores",
+    "continent": "africa",
+    "flag": "🇰🇲",
+    "aliases": []
+  },
+  {
+    "id": "CG",
+    "name": "Congo-Brazzaville",
+    "continent": "africa",
+    "flag": "🇨🇬",
+    "aliases": [
+      "Congo Brazzaville",
+      "Congo-Brazzaville"
+    ]
+  },
+  {
+    "id": "CD",
+    "name": "Congo-Kinshasa",
+    "continent": "africa",
+    "flag": "🇨🇩",
+    "aliases": [
+      "RDC",
+      "Congo Kinshasa",
+      "Congo-Kinshasa"
+    ]
+  },
+  {
+    "id": "CI",
+    "name": "Côte d’Ivoire",
+    "continent": "africa",
+    "flag": "🇨🇮",
+    "aliases": [
+      "Cote d Ivoire"
+    ]
+  },
+  {
+    "id": "DJ",
+    "name": "Djibouti",
+    "continent": "africa",
+    "flag": "🇩🇯",
+    "aliases": []
+  },
+  {
+    "id": "EG",
+    "name": "Égypte",
+    "continent": "africa",
+    "flag": "🇪🇬",
+    "aliases": []
+  },
+  {
+    "id": "ER",
+    "name": "Érythrée",
+    "continent": "africa",
+    "flag": "🇪🇷",
+    "aliases": []
+  },
+  {
+    "id": "SZ",
+    "name": "Eswatini",
+    "continent": "africa",
+    "flag": "🇸🇿",
+    "aliases": [
+      "Swaziland"
+    ]
+  },
+  {
+    "id": "ET",
+    "name": "Éthiopie",
+    "continent": "africa",
+    "flag": "🇪🇹",
+    "aliases": []
+  },
+  {
+    "id": "GA",
+    "name": "Gabon",
+    "continent": "africa",
+    "flag": "🇬🇦",
+    "aliases": []
+  },
+  {
+    "id": "GM",
+    "name": "Gambie",
+    "continent": "africa",
+    "flag": "🇬🇲",
+    "aliases": []
+  },
+  {
+    "id": "GH",
+    "name": "Ghana",
+    "continent": "africa",
+    "flag": "🇬🇭",
+    "aliases": []
+  },
+  {
+    "id": "GN",
+    "name": "Guinée",
+    "continent": "africa",
+    "flag": "🇬🇳",
+    "aliases": []
+  },
+  {
+    "id": "GW",
+    "name": "Guinée-Bissau",
+    "continent": "africa",
+    "flag": "🇬🇼",
+    "aliases": []
+  },
+  {
+    "id": "GQ",
+    "name": "Guinée équatoriale",
+    "continent": "africa",
+    "flag": "🇬🇶",
+    "aliases": []
+  },
+  {
+    "id": "KE",
+    "name": "Kenya",
+    "continent": "africa",
+    "flag": "🇰🇪",
+    "aliases": []
+  },
+  {
+    "id": "LS",
+    "name": "Lesotho",
+    "continent": "africa",
+    "flag": "🇱🇸",
+    "aliases": []
+  },
+  {
+    "id": "LR",
+    "name": "Liberia",
+    "continent": "africa",
+    "flag": "🇱🇷",
+    "aliases": []
+  },
+  {
+    "id": "LY",
+    "name": "Libye",
+    "continent": "africa",
+    "flag": "🇱🇾",
+    "aliases": []
+  },
+  {
+    "id": "MG",
+    "name": "Madagascar",
+    "continent": "africa",
+    "flag": "🇲🇬",
+    "aliases": []
+  },
+  {
+    "id": "MW",
+    "name": "Malawi",
+    "continent": "africa",
+    "flag": "🇲🇼",
+    "aliases": []
+  },
+  {
+    "id": "ML",
+    "name": "Mali",
+    "continent": "africa",
+    "flag": "🇲🇱",
+    "aliases": []
+  },
+  {
+    "id": "MA",
+    "name": "Maroc",
+    "continent": "africa",
+    "flag": "🇲🇦",
+    "aliases": []
+  },
+  {
+    "id": "MU",
+    "name": "Maurice",
+    "continent": "africa",
+    "flag": "🇲🇺",
+    "aliases": []
+  },
+  {
+    "id": "MR",
+    "name": "Mauritanie",
+    "continent": "africa",
+    "flag": "🇲🇷",
+    "aliases": []
+  },
+  {
+    "id": "MZ",
+    "name": "Mozambique",
+    "continent": "africa",
+    "flag": "🇲🇿",
+    "aliases": []
+  },
+  {
+    "id": "NA",
+    "name": "Namibie",
+    "continent": "africa",
+    "flag": "🇳🇦",
+    "aliases": []
+  },
+  {
+    "id": "NE",
+    "name": "Niger",
+    "continent": "africa",
+    "flag": "🇳🇪",
+    "aliases": []
+  },
+  {
+    "id": "NG",
+    "name": "Nigeria",
+    "continent": "africa",
+    "flag": "🇳🇬",
+    "aliases": []
+  },
+  {
+    "id": "UG",
+    "name": "Ouganda",
+    "continent": "africa",
+    "flag": "🇺🇬",
+    "aliases": []
+  },
+  {
+    "id": "CF",
+    "name": "République centrafricaine",
+    "continent": "africa",
+    "flag": "🇨🇫",
+    "aliases": []
+  },
+  {
+    "id": "RW",
+    "name": "Rwanda",
+    "continent": "africa",
+    "flag": "🇷🇼",
+    "aliases": []
+  },
+  {
+    "id": "ST",
+    "name": "Sao Tomé-et-Principe",
+    "continent": "africa",
+    "flag": "🇸🇹",
+    "aliases": []
+  },
+  {
+    "id": "SN",
+    "name": "Sénégal",
+    "continent": "africa",
+    "flag": "🇸🇳",
+    "aliases": []
+  },
+  {
+    "id": "SC",
+    "name": "Seychelles",
+    "continent": "africa",
+    "flag": "🇸🇨",
+    "aliases": []
+  },
+  {
+    "id": "SL",
+    "name": "Sierra Leone",
+    "continent": "africa",
+    "flag": "🇸🇱",
+    "aliases": []
+  },
+  {
+    "id": "SO",
+    "name": "Somalie",
+    "continent": "africa",
+    "flag": "🇸🇴",
+    "aliases": []
+  },
+  {
+    "id": "SD",
+    "name": "Soudan",
+    "continent": "africa",
+    "flag": "🇸🇩",
+    "aliases": []
+  },
+  {
+    "id": "SS",
+    "name": "Soudan du Sud",
+    "continent": "africa",
+    "flag": "🇸🇸",
+    "aliases": []
+  },
+  {
+    "id": "TZ",
+    "name": "Tanzanie",
+    "continent": "africa",
+    "flag": "🇹🇿",
+    "aliases": [
+      "Tanzanie"
+    ]
+  },
+  {
+    "id": "TD",
+    "name": "Tchad",
+    "continent": "africa",
+    "flag": "🇹🇩",
+    "aliases": []
+  },
+  {
+    "id": "TG",
+    "name": "Togo",
+    "continent": "africa",
+    "flag": "🇹🇬",
+    "aliases": []
+  },
+  {
+    "id": "TN",
+    "name": "Tunisie",
+    "continent": "africa",
+    "flag": "🇹🇳",
+    "aliases": []
+  },
+  {
+    "id": "ZM",
+    "name": "Zambie",
+    "continent": "africa",
+    "flag": "🇿🇲",
+    "aliases": []
+  },
+  {
+    "id": "ZW",
+    "name": "Zimbabwe",
+    "continent": "africa",
+    "flag": "🇿🇼",
+    "aliases": []
+  },
+  {
+    "id": "AL",
+    "name": "Albanie",
+    "continent": "europe",
+    "flag": "🇦🇱",
+    "aliases": []
+  },
+  {
+    "id": "DE",
+    "name": "Allemagne",
+    "continent": "europe",
+    "flag": "🇩🇪",
+    "aliases": []
+  },
+  {
+    "id": "AD",
+    "name": "Andorre",
+    "continent": "europe",
+    "flag": "🇦🇩",
+    "aliases": []
+  },
+  {
+    "id": "AT",
+    "name": "Autriche",
+    "continent": "europe",
+    "flag": "🇦🇹",
+    "aliases": []
+  },
+  {
+    "id": "BE",
+    "name": "Belgique",
+    "continent": "europe",
+    "flag": "🇧🇪",
+    "aliases": []
+  },
+  {
+    "id": "BY",
+    "name": "Biélorussie",
+    "continent": "europe",
+    "flag": "🇧🇾",
+    "aliases": []
+  },
+  {
+    "id": "BA",
+    "name": "Bosnie-Herzégovine",
+    "continent": "europe",
+    "flag": "🇧🇦",
+    "aliases": [
+      "Bosnie",
+      "Bosnie Herzégovine"
+    ]
+  },
+  {
+    "id": "BG",
+    "name": "Bulgarie",
+    "continent": "europe",
+    "flag": "🇧🇬",
+    "aliases": []
+  },
+  {
+    "id": "HR",
+    "name": "Croatie",
+    "continent": "europe",
+    "flag": "🇭🇷",
+    "aliases": []
+  },
+  {
+    "id": "DK",
+    "name": "Danemark",
+    "continent": "europe",
+    "flag": "🇩🇰",
+    "aliases": []
+  },
+  {
+    "id": "ES",
+    "name": "Espagne",
+    "continent": "europe",
+    "flag": "🇪🇸",
+    "aliases": []
+  },
+  {
+    "id": "EE",
+    "name": "Estonie",
+    "continent": "europe",
+    "flag": "🇪🇪",
+    "aliases": []
+  },
+  {
+    "id": "VA",
+    "name": "État de la Cité du Vatican",
+    "continent": "europe",
+    "flag": "🇻🇦",
+    "aliases": [
+      "Vatican",
+      "Saint-Siège"
+    ]
+  },
+  {
+    "id": "FI",
+    "name": "Finlande",
+    "continent": "europe",
+    "flag": "🇫🇮",
+    "aliases": []
+  },
+  {
+    "id": "FR",
+    "name": "France",
+    "continent": "europe",
+    "flag": "🇫🇷",
+    "aliases": []
+  },
+  {
+    "id": "GR",
+    "name": "Grèce",
+    "continent": "europe",
+    "flag": "🇬🇷",
+    "aliases": []
+  },
+  {
+    "id": "HU",
+    "name": "Hongrie",
+    "continent": "europe",
+    "flag": "🇭🇺",
+    "aliases": []
+  },
+  {
+    "id": "IE",
+    "name": "Irlande",
+    "continent": "europe",
+    "flag": "🇮🇪",
+    "aliases": []
+  },
+  {
+    "id": "IS",
+    "name": "Islande",
+    "continent": "europe",
+    "flag": "🇮🇸",
+    "aliases": []
+  },
+  {
+    "id": "IT",
+    "name": "Italie",
+    "continent": "europe",
+    "flag": "🇮🇹",
+    "aliases": []
+  },
+  {
+    "id": "LV",
+    "name": "Lettonie",
+    "continent": "europe",
+    "flag": "🇱🇻",
+    "aliases": []
+  },
+  {
+    "id": "LI",
+    "name": "Liechtenstein",
+    "continent": "europe",
+    "flag": "🇱🇮",
+    "aliases": []
+  },
+  {
+    "id": "LT",
+    "name": "Lituanie",
+    "continent": "europe",
+    "flag": "🇱🇹",
+    "aliases": []
+  },
+  {
+    "id": "LU",
+    "name": "Luxembourg",
+    "continent": "europe",
+    "flag": "🇱🇺",
+    "aliases": []
+  },
+  {
+    "id": "MK",
+    "name": "Macédoine du Nord",
+    "continent": "europe",
+    "flag": "🇲🇰",
+    "aliases": [
+      "Macédoine",
+      "Macédoine du Nord"
+    ]
+  },
+  {
+    "id": "MT",
+    "name": "Malte",
+    "continent": "europe",
+    "flag": "🇲🇹",
+    "aliases": []
+  },
+  {
+    "id": "MD",
+    "name": "Moldavie",
+    "continent": "europe",
+    "flag": "🇲🇩",
+    "aliases": [
+      "Moldavie"
+    ]
+  },
+  {
+    "id": "MC",
+    "name": "Monaco",
+    "continent": "europe",
+    "flag": "🇲🇨",
+    "aliases": []
+  },
+  {
+    "id": "ME",
+    "name": "Monténégro",
+    "continent": "europe",
+    "flag": "🇲🇪",
+    "aliases": []
+  },
+  {
+    "id": "NO",
+    "name": "Norvège",
+    "continent": "europe",
+    "flag": "🇳🇴",
+    "aliases": []
+  },
+  {
+    "id": "NL",
+    "name": "Pays-Bas",
+    "continent": "europe",
+    "flag": "🇳🇱",
+    "aliases": []
+  },
+  {
+    "id": "PL",
+    "name": "Pologne",
+    "continent": "europe",
+    "flag": "🇵🇱",
+    "aliases": []
+  },
+  {
+    "id": "PT",
+    "name": "Portugal",
+    "continent": "europe",
+    "flag": "🇵🇹",
+    "aliases": []
+  },
+  {
+    "id": "RO",
+    "name": "Roumanie",
+    "continent": "europe",
+    "flag": "🇷🇴",
+    "aliases": []
+  },
+  {
+    "id": "GB",
+    "name": "Royaume-Uni",
+    "continent": "europe",
+    "flag": "🇬🇧",
+    "aliases": [
+      "Royaume Uni",
+      "Grande Bretagne",
+      "UK"
+    ]
+  },
+  {
+    "id": "RU",
+    "name": "Russie",
+    "continent": "europe",
+    "flag": "🇷🇺",
+    "aliases": [
+      "Russie"
+    ]
+  },
+  {
+    "id": "SM",
+    "name": "Saint-Marin",
+    "continent": "europe",
+    "flag": "🇸🇲",
+    "aliases": []
+  },
+  {
+    "id": "RS",
+    "name": "Serbie",
+    "continent": "europe",
+    "flag": "🇷🇸",
+    "aliases": []
+  },
+  {
+    "id": "SK",
+    "name": "Slovaquie",
+    "continent": "europe",
+    "flag": "🇸🇰",
+    "aliases": []
+  },
+  {
+    "id": "SI",
+    "name": "Slovénie",
+    "continent": "europe",
+    "flag": "🇸🇮",
+    "aliases": []
+  },
+  {
+    "id": "SE",
+    "name": "Suède",
+    "continent": "europe",
+    "flag": "🇸🇪",
+    "aliases": []
+  },
+  {
+    "id": "CH",
+    "name": "Suisse",
+    "continent": "europe",
+    "flag": "🇨🇭",
+    "aliases": []
+  },
+  {
+    "id": "CZ",
+    "name": "Tchéquie",
+    "continent": "europe",
+    "flag": "🇨🇿",
+    "aliases": [
+      "République tchèque"
+    ]
+  },
+  {
+    "id": "UA",
+    "name": "Ukraine",
+    "continent": "europe",
+    "flag": "🇺🇦",
+    "aliases": []
+  },
+  {
+    "id": "AF",
+    "name": "Afghanistan",
+    "continent": "asia",
+    "flag": "🇦🇫",
+    "aliases": []
+  },
+  {
+    "id": "SA",
+    "name": "Arabie saoudite",
+    "continent": "asia",
+    "flag": "🇸🇦",
+    "aliases": []
+  },
+  {
+    "id": "AM",
+    "name": "Arménie",
+    "continent": "asia",
+    "flag": "🇦🇲",
+    "aliases": []
+  },
+  {
+    "id": "AZ",
+    "name": "Azerbaïdjan",
+    "continent": "asia",
+    "flag": "🇦🇿",
+    "aliases": []
+  },
+  {
+    "id": "BH",
+    "name": "Bahreïn",
+    "continent": "asia",
+    "flag": "🇧🇭",
+    "aliases": []
+  },
+  {
+    "id": "BD",
+    "name": "Bangladesh",
+    "continent": "asia",
+    "flag": "🇧🇩",
+    "aliases": []
+  },
+  {
+    "id": "BT",
+    "name": "Bhoutan",
+    "continent": "asia",
+    "flag": "🇧🇹",
+    "aliases": []
+  },
+  {
+    "id": "BN",
+    "name": "Brunei",
+    "continent": "asia",
+    "flag": "🇧🇳",
+    "aliases": []
+  },
+  {
+    "id": "KH",
+    "name": "Cambodge",
+    "continent": "asia",
+    "flag": "🇰🇭",
+    "aliases": []
+  },
+  {
+    "id": "CN",
+    "name": "Chine",
+    "continent": "asia",
+    "flag": "🇨🇳",
+    "aliases": []
+  },
+  {
+    "id": "CY",
+    "name": "Chypre",
+    "continent": "asia",
+    "flag": "🇨🇾",
+    "aliases": []
+  },
+  {
+    "id": "KP",
+    "name": "Corée du Nord",
+    "continent": "asia",
+    "flag": "🇰🇵",
+    "aliases": [
+      "Corée du Nord"
+    ]
+  },
+  {
+    "id": "KR",
+    "name": "Corée du Sud",
+    "continent": "asia",
+    "flag": "🇰🇷",
+    "aliases": [
+      "Corée du Sud"
+    ]
+  },
+  {
+    "id": "AE",
+    "name": "Émirats arabes unis",
+    "continent": "asia",
+    "flag": "🇦🇪",
+    "aliases": [
+      "Émirats arabes unis",
+      "EAU"
+    ]
+  },
+  {
+    "id": "GE",
+    "name": "Géorgie",
+    "continent": "asia",
+    "flag": "🇬🇪",
+    "aliases": []
+  },
+  {
+    "id": "IN",
+    "name": "Inde",
+    "continent": "asia",
+    "flag": "🇮🇳",
+    "aliases": []
+  },
+  {
+    "id": "ID",
+    "name": "Indonésie",
+    "continent": "asia",
+    "flag": "🇮🇩",
+    "aliases": []
+  },
+  {
+    "id": "IQ",
+    "name": "Irak",
+    "continent": "asia",
+    "flag": "🇮🇶",
+    "aliases": []
+  },
+  {
+    "id": "IR",
+    "name": "Iran",
+    "continent": "asia",
+    "flag": "🇮🇷",
+    "aliases": []
+  },
+  {
+    "id": "IL",
+    "name": "Israël",
+    "continent": "asia",
+    "flag": "🇮🇱",
+    "aliases": []
+  },
+  {
+    "id": "JP",
+    "name": "Japon",
+    "continent": "asia",
+    "flag": "🇯🇵",
+    "aliases": []
+  },
+  {
+    "id": "JO",
+    "name": "Jordanie",
+    "continent": "asia",
+    "flag": "🇯🇴",
+    "aliases": []
+  },
+  {
+    "id": "KZ",
+    "name": "Kazakhstan",
+    "continent": "asia",
+    "flag": "🇰🇿",
+    "aliases": []
+  },
+  {
+    "id": "KG",
+    "name": "Kirghizstan",
+    "continent": "asia",
+    "flag": "🇰🇬",
+    "aliases": []
+  },
+  {
+    "id": "KW",
+    "name": "Koweït",
+    "continent": "asia",
+    "flag": "🇰🇼",
+    "aliases": []
+  },
+  {
+    "id": "LA",
+    "name": "Laos",
+    "continent": "asia",
+    "flag": "🇱🇦",
+    "aliases": [
+      "Laos"
+    ]
+  },
+  {
+    "id": "LB",
+    "name": "Liban",
+    "continent": "asia",
+    "flag": "🇱🇧",
+    "aliases": []
+  },
+  {
+    "id": "MY",
+    "name": "Malaisie",
+    "continent": "asia",
+    "flag": "🇲🇾",
+    "aliases": []
+  },
+  {
+    "id": "MV",
+    "name": "Maldives",
+    "continent": "asia",
+    "flag": "🇲🇻",
+    "aliases": []
+  },
+  {
+    "id": "MN",
+    "name": "Mongolie",
+    "continent": "asia",
+    "flag": "🇲🇳",
+    "aliases": []
+  },
+  {
+    "id": "MM",
+    "name": "Myanmar (Birmanie)",
+    "continent": "asia",
+    "flag": "🇲🇲",
+    "aliases": []
+  },
+  {
+    "id": "NP",
+    "name": "Népal",
+    "continent": "asia",
+    "flag": "🇳🇵",
+    "aliases": []
+  },
+  {
+    "id": "OM",
+    "name": "Oman",
+    "continent": "asia",
+    "flag": "🇴🇲",
+    "aliases": []
+  },
+  {
+    "id": "UZ",
+    "name": "Ouzbékistan",
+    "continent": "asia",
+    "flag": "🇺🇿",
+    "aliases": []
+  },
+  {
+    "id": "PK",
+    "name": "Pakistan",
+    "continent": "asia",
+    "flag": "🇵🇰",
+    "aliases": []
+  },
+  {
+    "id": "PH",
+    "name": "Philippines",
+    "continent": "asia",
+    "flag": "🇵🇭",
+    "aliases": []
+  },
+  {
+    "id": "QA",
+    "name": "Qatar",
+    "continent": "asia",
+    "flag": "🇶🇦",
+    "aliases": []
+  },
+  {
+    "id": "SG",
+    "name": "Singapour",
+    "continent": "asia",
+    "flag": "🇸🇬",
+    "aliases": []
+  },
+  {
+    "id": "LK",
+    "name": "Sri Lanka",
+    "continent": "asia",
+    "flag": "🇱🇰",
+    "aliases": []
+  },
+  {
+    "id": "SY",
+    "name": "Syrie",
+    "continent": "asia",
+    "flag": "🇸🇾",
+    "aliases": []
+  },
+  {
+    "id": "TJ",
+    "name": "Tadjikistan",
+    "continent": "asia",
+    "flag": "🇹🇯",
+    "aliases": []
+  },
+  {
+    "id": "PS",
+    "name": "Territoires palestiniens",
+    "continent": "asia",
+    "flag": "🇵🇸",
+    "aliases": [
+      "Palestine"
+    ]
+  },
+  {
+    "id": "TH",
+    "name": "Thaïlande",
+    "continent": "asia",
+    "flag": "🇹🇭",
+    "aliases": []
+  },
+  {
+    "id": "TL",
+    "name": "Timor oriental",
+    "continent": "asia",
+    "flag": "🇹🇱",
+    "aliases": []
+  },
+  {
+    "id": "TM",
+    "name": "Turkménistan",
+    "continent": "asia",
+    "flag": "🇹🇲",
+    "aliases": []
+  },
+  {
+    "id": "TR",
+    "name": "Turquie",
+    "continent": "asia",
+    "flag": "🇹🇷",
+    "aliases": [
+      "Turquie"
+    ]
+  },
+  {
+    "id": "VN",
+    "name": "Viêt Nam",
+    "continent": "asia",
+    "flag": "🇻🇳",
+    "aliases": [
+      "Vietnam",
+      "Viet Nam"
+    ]
+  },
+  {
+    "id": "YE",
+    "name": "Yémen",
+    "continent": "asia",
+    "flag": "🇾🇪",
+    "aliases": []
+  },
+  {
+    "id": "AG",
+    "name": "Antigua-et-Barbuda",
+    "continent": "north-america",
+    "flag": "🇦🇬",
+    "aliases": []
+  },
+  {
+    "id": "BS",
+    "name": "Bahamas",
+    "continent": "north-america",
+    "flag": "🇧🇸",
+    "aliases": []
+  },
+  {
+    "id": "BB",
+    "name": "Barbade",
+    "continent": "north-america",
+    "flag": "🇧🇧",
+    "aliases": []
+  },
+  {
+    "id": "BZ",
+    "name": "Belize",
+    "continent": "north-america",
+    "flag": "🇧🇿",
+    "aliases": []
+  },
+  {
+    "id": "CA",
+    "name": "Canada",
+    "continent": "north-america",
+    "flag": "🇨🇦",
+    "aliases": []
+  },
+  {
+    "id": "CR",
+    "name": "Costa Rica",
+    "continent": "north-america",
+    "flag": "🇨🇷",
+    "aliases": []
+  },
+  {
+    "id": "CU",
+    "name": "Cuba",
+    "continent": "north-america",
+    "flag": "🇨🇺",
+    "aliases": []
+  },
+  {
+    "id": "DM",
+    "name": "Dominique",
+    "continent": "north-america",
+    "flag": "🇩🇲",
+    "aliases": []
+  },
+  {
+    "id": "US",
+    "name": "États-Unis",
+    "continent": "north-america",
+    "flag": "🇺🇸",
+    "aliases": [
+      "États-Unis",
+      "Etats Unis",
+      "USA"
+    ]
+  },
+  {
+    "id": "GD",
+    "name": "Grenade",
+    "continent": "north-america",
+    "flag": "🇬🇩",
+    "aliases": []
+  },
+  {
+    "id": "GT",
+    "name": "Guatemala",
+    "continent": "north-america",
+    "flag": "🇬🇹",
+    "aliases": []
+  },
+  {
+    "id": "HT",
+    "name": "Haïti",
+    "continent": "north-america",
+    "flag": "🇭🇹",
+    "aliases": []
+  },
+  {
+    "id": "HN",
+    "name": "Honduras",
+    "continent": "north-america",
+    "flag": "🇭🇳",
+    "aliases": []
+  },
+  {
+    "id": "JM",
+    "name": "Jamaïque",
+    "continent": "north-america",
+    "flag": "🇯🇲",
+    "aliases": []
+  },
+  {
+    "id": "MX",
+    "name": "Mexique",
+    "continent": "north-america",
+    "flag": "🇲🇽",
+    "aliases": []
+  },
+  {
+    "id": "NI",
+    "name": "Nicaragua",
+    "continent": "north-america",
+    "flag": "🇳🇮",
+    "aliases": []
+  },
+  {
+    "id": "PA",
+    "name": "Panama",
+    "continent": "north-america",
+    "flag": "🇵🇦",
+    "aliases": []
+  },
+  {
+    "id": "DO",
+    "name": "République dominicaine",
+    "continent": "north-america",
+    "flag": "🇩🇴",
+    "aliases": []
+  },
+  {
+    "id": "KN",
+    "name": "Saint-Christophe-et-Niévès",
+    "continent": "north-america",
+    "flag": "🇰🇳",
+    "aliases": []
+  },
+  {
+    "id": "VC",
+    "name": "Saint-Vincent-et-les Grenadines",
+    "continent": "north-america",
+    "flag": "🇻🇨",
+    "aliases": []
+  },
+  {
+    "id": "LC",
+    "name": "Sainte-Lucie",
+    "continent": "north-america",
+    "flag": "🇱🇨",
+    "aliases": []
+  },
+  {
+    "id": "SV",
+    "name": "Salvador",
+    "continent": "north-america",
+    "flag": "🇸🇻",
+    "aliases": []
+  },
+  {
+    "id": "TT",
+    "name": "Trinité-et-Tobago",
+    "continent": "north-america",
+    "flag": "🇹🇹",
+    "aliases": []
+  },
+  {
+    "id": "AR",
+    "name": "Argentine",
+    "continent": "south-america",
+    "flag": "🇦🇷",
+    "aliases": []
+  },
+  {
+    "id": "BO",
+    "name": "Bolivie",
+    "continent": "south-america",
+    "flag": "🇧🇴",
+    "aliases": []
+  },
+  {
+    "id": "BR",
+    "name": "Brésil",
+    "continent": "south-america",
+    "flag": "🇧🇷",
+    "aliases": []
+  },
+  {
+    "id": "CL",
+    "name": "Chili",
+    "continent": "south-america",
+    "flag": "🇨🇱",
+    "aliases": []
+  },
+  {
+    "id": "CO",
+    "name": "Colombie",
+    "continent": "south-america",
+    "flag": "🇨🇴",
+    "aliases": []
+  },
+  {
+    "id": "EC",
+    "name": "Équateur",
+    "continent": "south-america",
+    "flag": "🇪🇨",
+    "aliases": []
+  },
+  {
+    "id": "GY",
+    "name": "Guyana",
+    "continent": "south-america",
+    "flag": "🇬🇾",
+    "aliases": []
+  },
+  {
+    "id": "PY",
+    "name": "Paraguay",
+    "continent": "south-america",
+    "flag": "🇵🇾",
+    "aliases": []
+  },
+  {
+    "id": "PE",
+    "name": "Pérou",
+    "continent": "south-america",
+    "flag": "🇵🇪",
+    "aliases": []
+  },
+  {
+    "id": "SR",
+    "name": "Suriname",
+    "continent": "south-america",
+    "flag": "🇸🇷",
+    "aliases": []
+  },
+  {
+    "id": "UY",
+    "name": "Uruguay",
+    "continent": "south-america",
+    "flag": "🇺🇾",
+    "aliases": []
+  },
+  {
+    "id": "VE",
+    "name": "Venezuela",
+    "continent": "south-america",
+    "flag": "🇻🇪",
+    "aliases": []
+  },
+  {
+    "id": "AU",
+    "name": "Australie",
+    "continent": "oceania",
+    "flag": "🇦🇺",
+    "aliases": []
+  },
+  {
+    "id": "FJ",
+    "name": "Fidji",
+    "continent": "oceania",
+    "flag": "🇫🇯",
+    "aliases": []
+  },
+  {
+    "id": "MH",
+    "name": "Îles Marshall",
+    "continent": "oceania",
+    "flag": "🇲🇭",
+    "aliases": []
+  },
+  {
+    "id": "SB",
+    "name": "Îles Salomon",
+    "continent": "oceania",
+    "flag": "🇸🇧",
+    "aliases": []
+  },
+  {
+    "id": "KI",
+    "name": "Kiribati",
+    "continent": "oceania",
+    "flag": "🇰🇮",
+    "aliases": []
+  },
+  {
+    "id": "FM",
+    "name": "Micronésie",
+    "continent": "oceania",
+    "flag": "🇫🇲",
+    "aliases": []
+  },
+  {
+    "id": "NR",
+    "name": "Nauru",
+    "continent": "oceania",
+    "flag": "🇳🇷",
+    "aliases": []
+  },
+  {
+    "id": "NZ",
+    "name": "Nouvelle-Zélande",
+    "continent": "oceania",
+    "flag": "🇳🇿",
+    "aliases": []
+  },
+  {
+    "id": "PW",
+    "name": "Palaos",
+    "continent": "oceania",
+    "flag": "🇵🇼",
+    "aliases": []
+  },
+  {
+    "id": "PG",
+    "name": "Papouasie-Nouvelle-Guinée",
+    "continent": "oceania",
+    "flag": "🇵🇬",
+    "aliases": []
+  },
+  {
+    "id": "WS",
+    "name": "Samoa",
+    "continent": "oceania",
+    "flag": "🇼🇸",
+    "aliases": []
+  },
+  {
+    "id": "TO",
+    "name": "Tonga",
+    "continent": "oceania",
+    "flag": "🇹🇴",
+    "aliases": []
+  },
+  {
+    "id": "TV",
+    "name": "Tuvalu",
+    "continent": "oceania",
+    "flag": "🇹🇻",
+    "aliases": []
+  },
+  {
+    "id": "VU",
+    "name": "Vanuatu",
+    "continent": "oceania",
+    "flag": "🇻🇺",
+    "aliases": []
+  }
+]
