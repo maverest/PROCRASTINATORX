@@ -1,0 +1,24 @@
+Carte Mapix — Made with Natural Earth
+
+Les données vectorielles originales sont dans le domaine public.
+Extrait des conditions Natural Earth :
+"All versions of Natural Earth raster + vector map data found on this website are in the public domain."
+
+Conditions originales : https://www.naturalearthdata.com/about/terms-of-use/
+Site : https://www.naturalearthdata.com/
+
+Source GeoJSON dérivée :
+https://github.com/datasets/geo-countries
+https://raw.githubusercontent.com/datasets/geo-countries/main/data/countries.geojson
+Le dépôt distribue ses données sous Open Data Commons Public Domain Dedication
+and License (PDDL) : https://opendatacommons.org/licenses/pddl/1-0/
+
+Source consultée le 2026-09-12.
+SHA-256 du GeoJSON :
+45f41865adec4f86602c2cd05c0e29cd8b437614bf2f5b5a863d12463202cae4
+
+Adaptations Mapix : sélection du catalogue de 195 pays, correction des codes
+ISO-2 absents pour France et Norway, projection équirectangulaire, simplification
+des contours et cibles transparentes pour les petits pays. La géométrie source
+conserve les frontières et territoires de Natural Earth.
+Génération locale par tools/build_mapix_map.py ; aucun accès réseau à l'exécution.

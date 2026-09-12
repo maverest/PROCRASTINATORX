@@ -1,0 +1,116 @@
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+import xml.etree.ElementTree as ET
+
+import pytest
+
+
+ROOT = Path(__file__).parents[2]
+SVG_NAMESPACE = 'xmlns="http://www.w3.org/2000/svg"'
+
+
+def test_world_svg_matches_all_catalog_countries():
+    countries = json.loads((ROOT / "static/mapix/countries.json").read_text())
+    root = ET.parse(ROOT / "static/mapix/world.svg").getroot()
+    shapes = [n.attrib["data-country"] for n in root.iter() if "data-country" in n.attrib]
+    targets = {n.attrib["data-target-country"] for n in root.iter() if "data-target-country" in n.attrib}
+    assert {c["id"] for c in countries} == set(shapes) | targets
+    assert shapes == sorted(set(shapes))
+
+
+def test_svg_is_local_interactive_data_not_an_external_map():
+    svg = (ROOT / "static/mapix/world.svg").read_text()
+    assert SVG_NAMESPACE in svg
+    local_content = svg.replace(SVG_NAMESPACE, "", 1)
+    assert "http://" not in local_content
+    assert "https://" not in local_content
+    assert "xlink:href" not in svg
+    assert "<script" not in svg
+    assert 'viewBox="0 0 3600 1800"' in svg
+    assert len(svg.encode()) < 4 * 1024 * 1024
+    root = ET.fromstring(svg)
+    assert {n.tag.rsplit("}", 1)[-1] for n in root.iter()} <= {"svg", "g", "path", "circle"}
+    assert all(not k.lower().startswith("on") for n in root.iter() for k in n.attrib)
+
+
+def test_natural_earth_license_is_packaged():
+    text = (ROOT / "static/mapix/NATURAL_EARTH_LICENSE.txt").read_text()
+    assert "public domain" in text.lower()
+    assert "naturalearthdata.com" in text
+
+
+def feature(code, coordinates, geometry_type="Polygon", name="Example"):
+    return {"type": "Feature", "properties": {"ISO3166-1-Alpha-2": code, "name": name},
+            "geometry": {"type": geometry_type, "coordinates": coordinates}}
+
+
+def generate(tmp_path, features, codes):
+    source = tmp_path / "source.geojson"
+    catalog = tmp_path / "countries.json"
+    output = tmp_path / "world.svg"
+    source.write_text(json.dumps({"type": "FeatureCollection", "features": features}))
+    catalog.write_text(json.dumps([{"id": c} for c in codes]))
+    result = subprocess.run([sys.executable, str(ROOT / "tools/build_mapix_map.py"),
+                             str(source), str(catalog), str(output)], capture_output=True, text=True)
+    return result, output
+
+
+def test_converter_projects_merges_simplifies_and_retains_holes(tmp_path):
+    outer = [[0, 0], [1, 0.01], [2, 0], [2, 2], [0, 2], [0, 0]]
+    hole = [[0.5, 0.5], [1, 0.5], [1, 1], [0.5, 0.5]]
+    island = [[10, 0], [10.1, 0], [10.1, 0.1], [10, 0]]
+    features = [feature("ZZ", [outer]), feature("FR", [outer, hole]),
+                feature("FR", [[island]], "MultiPolygon")]
+    result, output = generate(tmp_path, features, ["FR"])
+    assert result.returncode == 0, result.stderr
+    first = output.read_bytes()
+    path = next(n for n in ET.fromstring(first).iter() if "data-country" in n.attrib)
+    assert path.attrib["data-country"] == "FR"
+    assert path.attrib["fill-rule"] == "evenodd"
+    assert path.attrib["d"].count("M") == 3
+    assert "1800.0,900.0" in path.attrib["d"]
+    assert "1820.0,880.0" in path.attrib["d"]
+    assert "1810.0,899.9" not in path.attrib["d"]
+    assert len([n for n in ET.fromstring(first).iter() if "data-target-country" in n.attrib]) == 0
+    result, output = generate(tmp_path, list(reversed(features)), ["FR"])
+    assert result.returncode == 0, result.stderr
+    assert output.read_bytes() == first
+
+
+def test_converter_enlarges_small_country_at_largest_polygon(tmp_path):
+    tiny = [[20, 0], [20.001, 0], [20.001, 0.001], [20, 0]]
+    main = [[0, 0], [0.2, 0], [0.2, 0.2], [0, 0.2], [0, 0]]
+    result, output = generate(tmp_path, [feature("VA", [[tiny], [main]], "MultiPolygon")], ["VA"])
+    assert result.returncode == 0, result.stderr
+    root = ET.parse(output).getroot()
+    target = next(n for n in root.iter() if "data-target-country" in n.attrib)
+    assert target.attrib.items() >= {"data-target-country": "VA", "cx": "1801.0",
+                                     "cy": "899.0", "r": "7.0", "fill": "transparent"}.items()
+    path = next(n for n in root.iter() if "data-country" in n.attrib)
+    for ring in path.attrib["d"].split("M")[1:]:
+        assert len(set(re.findall(r"\d+\.\d,\d+\.\d", ring))) >= 3
+
+
+@pytest.mark.parametrize("features,codes", [([], ["FR"]),
+    ([feature("FR", [], "Point")], ["FR"]),
+    ([feature("-99", [], name="France")], ["FR", "NO"]),
+])
+def test_converter_fails_without_complete_valid_geometry(tmp_path, features, codes):
+    result, output = generate(tmp_path, features, codes)
+    assert result.returncode != 0
+    assert not output.exists()
+    assert "FR" in result.stderr
+
+
+def test_converter_repairs_only_known_missing_natural_earth_iso_codes(tmp_path):
+    ring = [[[0, 0], [2, 0], [2, 2], [0, 0]]]
+    features = [feature("-99", ring, name="France"), feature("-99", ring, name="Norway")]
+    result, output = generate(tmp_path, features, ["FR", "NO"])
+    assert result.returncode == 0, result.stderr
+    assert {n.attrib["data-country"] for n in ET.parse(output).getroot().iter()
+            if "data-country" in n.attrib} == {"FR", "NO"}
+    result, _ = generate(tmp_path, features + [features[0]], ["FR", "NO"])
+    assert result.returncode != 0
