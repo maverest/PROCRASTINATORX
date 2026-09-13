@@ -38,11 +38,13 @@ def test_home_renders_catalog_without_starting_orquantix(client):
     assert client.get("/status").get_json()["phase"] == "idle"
 
 
-def test_home_lists_orquantix_then_calculatorx(client):
+def test_home_lists_orquantix_then_calculatorx_then_mapix(client):
     page = client.get("/").data.decode()
 
-    assert page.index("Orquantix") < page.index("CalculatorX")
+    assert page.index("Orquantix") < page.index("CalculatorX") < page.index("Mapix")
     assert 'href="/games/calculatorx/"' in page
+    assert 'href="/games/mapix/"' in page
+    assert client.get("/games/mapix/").status_code == 200
 
 
 def test_home_only_displays_game_titles_and_actions(client):
@@ -55,7 +57,8 @@ def test_home_only_displays_game_titles_and_actions(client):
     assert "PROCRASTINATORX" in page
     assert "Orquantix" in page
     assert "CalculatorX" in page
-    assert page.count("Ouvrir") == 2
+    assert "Mapix" in page
+    assert page.count("Ouvrir") == 3
 
 
 def test_legacy_status_still_reports_orquantix_idle(client):
