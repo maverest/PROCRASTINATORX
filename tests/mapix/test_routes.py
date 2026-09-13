@@ -231,3 +231,21 @@ def test_build_game_uses_configured_static_root(tmp_path, monkeypatch):
     session = start(app.test_client())
     assert session["total"] == 1
     assert session["remaining_flags"] == ["CH"]
+
+
+def test_build_game_finds_real_catalog_from_another_working_directory(tmp_path, monkeypatch):
+    from games.mapix import build_game
+
+    monkeypatch.delenv("PROCRASTINATOR_STATIC", raising=False)
+    monkeypatch.chdir(tmp_path)
+    mounted = build_game(tmp_path)
+    app = Flask(__name__)
+    app.register_blueprint(mounted.blueprint)
+    response = app.test_client().post(
+        "/games/mapix/session", json={"mode": "territory", "region": "world"}
+    )
+    assert response.status_code == 200
+    session = response.get_json()
+    assert session["total"] == 195
+    assert len(session["remaining_flags"]) == 195
+    assert {"CH", "FR", "JP", "US"} <= set(session["remaining_flags"])

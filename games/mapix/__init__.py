@@ -15,7 +15,8 @@ GAME_NAME = "Mapix"
 
 
 def build_game(data_dir: Path) -> MountedGame:
-    static_root = Path(os.environ.get("PROCRASTINATOR_STATIC", "static"))
+    default_static_root = Path(__file__).resolve().parents[2] / "static"
+    static_root = Path(os.environ.get("PROCRASTINATOR_STATIC", default_static_root))
     catalog = CountryCatalog.from_json(static_root / "mapix/countries.json")
     return MountedGame(
         metadata=GameMetadata(
