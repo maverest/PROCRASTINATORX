@@ -12,6 +12,42 @@ ROOT = Path(__file__).parents[2]
 SVG_NAMESPACE = 'xmlns="http://www.w3.org/2000/svg"'
 
 
+def test_template_exposes_mapix_panels_and_controls():
+    html = (ROOT / "templates/mapix/index.html").read_text()
+    for element_id in (
+        "setupPanel", "gamePanel", "resultPanel", "fatalPanel",
+        "modeChoices", "regionChoices", "playButton", "quitButton",
+        "retryButton", "menuButton", "mapContainer", "flagPanel", "flagGrid",
+        "countryPrompt", "progressValue", "timerValue", "nameForm", "nameInput",
+        "resultTime", "resultPerfect", "resultErrors", "resultAccuracy",
+    ):
+        assert f'id="{element_id}"' in html
+    assert '<script src="/static/mapix/game.js" defer></script>' in html
+    assert '<link rel="stylesheet" href="/static/mapix/style.css">' in html
+    assert "<script>" not in html
+    assert html.index('id="mapContainer"') < html.index('id="flagPanel"')
+
+
+def test_setup_lists_four_modes_and_seven_regions():
+    html = (ROOT / "templates/mapix/index.html").read_text()
+    for value in ("territory", "flag-territory", "flag-only", "all"):
+        assert f'data-mode="{value}"' in html
+    for value in ("world", "africa", "europe", "asia", "north-america", "south-america", "oceania"):
+        assert f'data-region="{value}"' in html
+
+
+def test_template_provides_accessible_setup_and_feedback():
+    html = (ROOT / "templates/mapix/index.html").read_text()
+    assert html.count('aria-pressed="true"') == 2
+    assert html.count('aria-pressed="false"') == 9
+    assert 'aria-live="polite"' in html
+    assert '<form id="nameForm"' in html
+    assert '<label for="nameInput"' in html
+    assert 'href="/"' in html
+    for label in ("Temps", "Sans faute", "Erreurs", "Précision"):
+        assert f"<dt>{label}</dt>" in html
+
+
 def test_world_svg_matches_all_catalog_countries():
     countries = json.loads((ROOT / "static/mapix/countries.json").read_text())
     root = ET.parse(ROOT / "static/mapix/world.svg").getroot()

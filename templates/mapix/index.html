@@ -4,10 +4,99 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mapix</title>
+  <link rel="stylesheet" href="/static/mapix/style.css">
+  <script src="/static/mapix/game.js" defer></script>
 </head>
 <body>
-  <main>
-    <h1>Mapix</h1>
+  <main class="mapix-app">
+    <header class="app-header">
+      <a id="backLink" class="back-link" href="/">← Jeux</a>
+      <h1><span aria-hidden="true">⌖</span> Mapix</h1>
+      <span class="header-caption">Le monde à retrouver</span>
+    </header>
+
+    <section id="setupPanel" class="setup-panel" aria-labelledby="setupTitle">
+      <div class="setup-intro">
+        <span class="eyebrow">À vous le monde</span>
+        <h2 id="setupTitle" tabindex="-1">Où allons-nous ?</h2>
+      </div>
+      <fieldset>
+        <legend>Mode</legend>
+        <div id="modeChoices" class="choices mode-choices">
+          <button type="button" data-mode="territory" aria-pressed="true">Territoire</button>
+          <button type="button" data-mode="flag-territory" aria-pressed="false">Drapeau</button>
+          <button type="button" data-mode="flag-only" aria-pressed="false">Drapeau seul</button>
+          <button type="button" data-mode="all" aria-pressed="false">Tous</button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Zone</legend>
+        <div id="regionChoices" class="choices region-choices">
+          <button type="button" data-region="world" aria-pressed="true">Monde</button>
+          <button type="button" data-region="africa" aria-pressed="false">Afrique</button>
+          <button type="button" data-region="europe" aria-pressed="false">Europe</button>
+          <button type="button" data-region="asia" aria-pressed="false">Asie</button>
+          <button type="button" data-region="north-america" aria-pressed="false">Amérique du Nord</button>
+          <button type="button" data-region="south-america" aria-pressed="false">Amérique du Sud</button>
+          <button type="button" data-region="oceania" aria-pressed="false">Océanie</button>
+        </div>
+      </fieldset>
+      <button id="playButton" class="primary-button" type="button">Jouer <span aria-hidden="true">→</span></button>
+    </section>
+
+    <section id="gamePanel" class="game-panel" aria-label="Partie en cours" tabindex="-1" hidden>
+      <div class="game-header">
+        <div class="game-prompt" aria-live="polite" aria-atomic="true">
+          <span id="regionLabel" class="eyebrow">Monde</span>
+          <h2 id="countryPrompt" tabindex="-1"></h2>
+        </div>
+        <div class="game-stats">
+          <span id="progressValue" class="progress-value" aria-label="Pays trouvés" aria-live="polite" aria-atomic="true">0 / 195</span>
+          <span id="timerValue" class="timer-value" role="timer" aria-label="Temps écoulé">00:00</span>
+        </div>
+      </div>
+      <form id="nameForm" class="name-form" hidden>
+        <label for="nameInput">Un pays</label>
+        <input id="nameInput" type="text" name="country" placeholder="Écrivez un pays…" autocomplete="off" spellcheck="false" disabled>
+        <button type="submit" disabled>Valider</button>
+      </form>
+      <div class="game-layout">
+        <div id="mapContainer" class="map-container" role="region" aria-label="Carte du monde">
+          <div class="map-preview" aria-hidden="true"></div>
+        </div>
+        <aside id="flagPanel" class="flag-panel" aria-labelledby="flagTitle" hidden>
+          <h3 id="flagTitle">Drapeaux</h3>
+          <div id="flagGrid" class="flag-grid"></div>
+        </aside>
+      </div>
+      <footer class="game-footer">
+        <p id="gameFeedback" role="status" aria-live="polite"></p>
+        <button id="quitButton" class="text-button" type="button">Quitter</button>
+      </footer>
+    </section>
+
+    <section id="resultPanel" class="result-panel" aria-labelledby="resultTitle" hidden>
+      <span class="eyebrow">Tour du monde terminé</span>
+      <h2 id="resultTitle" tabindex="-1">Bien joué.</h2>
+      <dl class="result-stats">
+        <div class="result-stat"><dt>Temps</dt><dd id="resultTime">—</dd></div>
+        <div class="result-stat"><dt>Sans faute</dt><dd id="resultPerfect">—</dd></div>
+        <div class="result-stat"><dt>Erreurs</dt><dd id="resultErrors">—</dd></div>
+        <div class="result-stat"><dt>Précision</dt><dd id="resultAccuracy">—</dd></div>
+      </dl>
+      <div class="panel-actions">
+        <button id="retryButton" class="primary-button" type="button">Rejouer</button>
+        <button id="menuButton" class="text-button" type="button">Modes et zones</button>
+      </div>
+    </section>
+
+    <section id="fatalPanel" class="fatal-panel" aria-labelledby="fatalTitle" hidden>
+      <h2 id="fatalTitle" tabindex="-1">Mapix indisponible.</h2>
+      <div class="panel-actions">
+        <button id="fatalRetryButton" class="primary-button" type="button">Réessayer</button>
+        <button id="fatalMenuButton" class="text-button" type="button">Modes et zones</button>
+      </div>
+    </section>
   </main>
 </body>
 </html>
