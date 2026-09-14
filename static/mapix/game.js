@@ -6,8 +6,8 @@
     'regionChoices', 'playButton', 'quitButton', 'retryButton', 'menuButton',
     'fatalRetryButton', 'fatalMenuButton', 'backLink', 'mapContainer', 'flagPanel',
     'flagGrid', 'countryPrompt', 'progressValue', 'timerValue', 'nameForm',
-    'nameInput', 'regionLabel', 'resultTime', 'resultPerfect', 'resultErrors',
-    'resultAccuracy', 'gameFeedback',
+    'nameInput', 'nameSubmit', 'regionLabel', 'resultTime', 'resultPerfectStat',
+    'resultPerfect', 'resultErrors', 'resultAccuracy', 'gameFeedback',
   ].map(id => [id, document.getElementById(id)]));
 
   const state = {
@@ -18,7 +18,22 @@
     timerOrigin: null,
     timerFrame: null,
     map: null,
+    countries: null,
   };
+  let catalogPromise = null;
+
+  function loadCatalog() {
+    if (!catalogPromise) {
+      catalogPromise = fetch('/static/mapix/countries.json').then(async response => {
+        if (!response.ok) throw new Error('catalog');
+        const countries = await response.json();
+        if (!Array.isArray(countries)) throw new Error('catalog');
+        state.countries = new Map(countries.map(country => [country.id, country]));
+        return state.countries;
+      });
+    }
+    return catalogPromise;
+  }
 
   function stopTimer() {
     if (state.timerFrame !== null) cancelAnimationFrame(state.timerFrame);
@@ -58,6 +73,52 @@
     }
     for (const button of document.querySelectorAll('[data-mode], [data-region]')) button.disabled = busy;
     ui.playButton.setAttribute('aria-busy', String(busy));
+    syncGameControls();
+    if (!busy && state.session?.mode === 'all' && !state.session.finished && !ui.gamePanel.hidden) {
+      ui.nameInput.focus();
+    }
+  }
+
+  function syncGameControls() {
+    const canAnswer = Boolean(state.session && !state.session.finished && !state.activeRequest);
+    const canName = canAnswer && state.session.mode === 'all';
+    ui.nameInput.disabled = !canName;
+    ui.nameSubmit.disabled = !canName;
+    for (const button of ui.flagGrid.querySelectorAll('.flag-choice')) {
+      button.disabled = !canAnswer || button.dataset.locked === 'true';
+    }
+  }
+
+  function currentCountryId() {
+    if (!state.session.current) return null;
+    for (const [id, country] of state.countries) {
+      if (country.name === state.session.current.name) return id;
+    }
+    return null;
+  }
+
+  function renderFlags() {
+    ui.flagGrid.replaceChildren();
+    if (!['flag-territory', 'flag-only'].includes(state.session.mode)) return;
+    const lockedId = state.session.flag_done ? currentCountryId() : null;
+    for (const id of state.session.remaining_flags) {
+      const country = state.countries.get(id);
+      if (!country) continue;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'flag-choice';
+      button.dataset.country = id;
+      button.dataset.locked = String(id === lockedId);
+      button.textContent = country.flag;
+      button.setAttribute('aria-label', `Choisir le drapeau ${country.name}`);
+      if (id === lockedId) {
+        button.classList.add('is-selected');
+        button.setAttribute('aria-pressed', 'true');
+      }
+      button.addEventListener('click', () => submitAnswer('flag', id));
+      ui.flagGrid.append(button);
+    }
+    syncGameControls();
   }
 
   function renderSession() {
@@ -71,6 +132,10 @@
     ui.progressValue.textContent = `${session.found.length} / ${session.total}`;
     ui.regionLabel.textContent = [...ui.regionChoices.querySelectorAll('button')]
       .find(button => button.dataset.region === session.region).textContent;
+    renderFlags();
+    state.map?.setFound(session.found);
+    if (session.territory_done) state.map?.markCorrect(currentCountryId());
+    syncGameControls();
   }
 
   function renderResult(result) {
@@ -78,8 +143,10 @@
     ui.resultTime.textContent = formatDuration(result.elapsed_seconds);
     ui.resultErrors.textContent = String(result.errors);
     ui.resultAccuracy.textContent = `${new Intl.NumberFormat('fr', {maximumFractionDigits: 1}).format(result.accuracy_percent)} %`;
-    ui.resultPerfect.closest('.result-stat').hidden = state.session.mode === 'all';
-    ui.resultPerfect.textContent = `${result.perfect_countries} / ${state.session.total}`;
+    ui.resultPerfectStat.hidden = state.session.mode === 'all';
+    if (state.session.mode !== 'all') {
+      ui.resultPerfect.textContent = `${result.perfect_countries} / ${state.session.total}`;
+    }
     showPanel(ui.resultPanel);
   }
 
@@ -88,6 +155,7 @@
     setBusy(true);
     stopTimer();
     try {
+      await loadCatalog();
       const response = await fetch('/games/mapix/session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -100,7 +168,9 @@
         if (!state.map) {
           state.map = window.MapixMap.create(ui.mapContainer, {
             onCountry: id => {
-              if (state.session?.mode === 'territory') submitAnswer('territory', id);
+              if (['territory', 'flag-territory'].includes(state.session?.mode)) {
+                submitAnswer('territory', id);
+              }
             },
           });
         }
@@ -114,6 +184,7 @@
       } else {
         showPanel(ui.gamePanel);
         startTimer();
+        if (state.session.mode === 'all') ui.nameInput.focus();
       }
     } catch {
       state.map?.destroy();
@@ -132,18 +203,38 @@
     }
   }
 
-  function renderAnswer(payload) {
+  function flashElement(element) {
+    if (!element) return;
+    element.classList.remove('is-wrong');
+    // Relancer l'animation lorsque deux erreurs se suivent rapidement.
+    void element.offsetWidth;
+    element.classList.add('is-wrong');
+    window.setTimeout(() => element.classList.remove('is-wrong'), 300);
+  }
+
+  function renderAnswer(payload, action) {
     const outcome = payload.outcome;
-    if (outcome.correct) {
-      state.map.markCorrect(outcome.selected_country_id);
+    state.session = payload;
+    renderSession();
+    if (outcome.duplicate) {
+      ui.gameFeedback.textContent = '';
+    } else if (outcome.correct) {
+      if (action === 'territory' && !outcome.advanced) {
+        state.map?.markCorrect(outcome.selected_country_id);
+      }
       ui.gameFeedback.textContent = 'Bien trouvé !';
     } else {
-      state.map.flashWrong(outcome.selected_country_id);
-      ui.gameFeedback.textContent = 'Essayez un autre territoire.';
+      if (action === 'territory') state.map?.flashWrong(outcome.selected_country_id);
+      if (action === 'flag') {
+        flashElement(ui.flagGrid.querySelector(`[data-country="${outcome.selected_country_id}"]`));
+      }
+      if (action === 'name') flashElement(ui.nameInput);
+      ui.gameFeedback.textContent = action === 'name' ? 'Pays inconnu.' : 'Essayez encore.';
     }
-    state.session = payload;
-    if (outcome.advanced) state.map.setFound(payload.found);
-    renderSession();
+    if (action === 'name') {
+      ui.nameInput.value = '';
+      if (!payload.finished) ui.nameInput.focus();
+    }
     if (payload.finished) renderResult(payload.result);
   }
 
@@ -163,7 +254,7 @@
       });
       const payload = await response.json();
       if (!response.ok) return handleAnswerError(response.status, payload);
-      renderAnswer(payload);
+      renderAnswer(payload, action);
     } catch {
       // La réponse a peut-être été enregistrée : ne pas renvoyer aveuglément
       // une proposition avec un index de question devenu périmé.
@@ -175,6 +266,9 @@
 
   function showSetup() {
     state.session = null;
+    ui.flagGrid.replaceChildren();
+    ui.nameInput.value = '';
+    syncGameControls();
     showPanel(ui.setupPanel);
   }
 
@@ -222,7 +316,11 @@
       quitGame('/');
     }
   });
-  // Le formulaire du mode Tous sera câblé avec les autres modes.
-  ui.nameForm.addEventListener('submit', event => event.preventDefault());
+  ui.nameForm.addEventListener('submit', event => {
+    event.preventDefault();
+    const value = ui.nameInput.value.trim();
+    if (value) submitAnswer('name', value);
+    else ui.nameInput.focus();
+  });
   window.addEventListener('pagehide', stopTimer);
 })();

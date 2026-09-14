@@ -59,7 +59,7 @@
       <form id="nameForm" class="name-form" hidden>
         <label for="nameInput">Un pays</label>
         <input id="nameInput" type="text" name="country" placeholder="Écrivez un pays…" autocomplete="off" spellcheck="false" disabled>
-        <button type="submit" disabled>Valider</button>
+        <button id="nameSubmit" type="submit" disabled>Valider</button>
       </form>
       <div class="game-layout">
         <div id="mapContainer" class="map-container" role="region" aria-label="Carte du monde">
@@ -81,7 +81,7 @@
       <h2 id="resultTitle" tabindex="-1">Bien joué.</h2>
       <dl class="result-stats">
         <div class="result-stat"><dt>Temps</dt><dd id="resultTime">—</dd></div>
-        <div class="result-stat"><dt>Sans faute</dt><dd id="resultPerfect">—</dd></div>
+        <div id="resultPerfectStat" class="result-stat"><dt>Sans faute</dt><dd id="resultPerfect">—</dd></div>
         <div class="result-stat"><dt>Erreurs</dt><dd id="resultErrors">—</dd></div>
         <div class="result-stat"><dt>Précision</dt><dd id="resultAccuracy">—</dd></div>
       </dl>

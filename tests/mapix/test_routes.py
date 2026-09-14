@@ -215,6 +215,57 @@ def test_each_mode_can_finish_through_http(client, state, mode, actions):
     assert response.get_json() == {"error": "La partie est terminée.", "field": None}
 
 
+def test_combined_flag_stays_until_territory_is_also_correct(client, state):
+    session = start(client, "flag-territory")
+    country_id = target(state)
+
+    response = client.post(
+        "/games/mapix/answer",
+        json=answer_payload(session, action="flag", value=country_id),
+    )
+    after_flag = response.get_json()
+    assert response.status_code == 200
+    assert after_flag["flag_done"] is True
+    assert after_flag["territory_done"] is False
+    assert country_id in after_flag["remaining_flags"]
+
+    response = client.post(
+        "/games/mapix/answer",
+        json=answer_payload(after_flag, action="territory", value=country_id),
+    )
+    after_territory = response.get_json()
+    assert response.status_code == 200
+    assert country_id not in after_territory["remaining_flags"]
+
+
+def test_flag_only_removes_flag_immediately(client, state):
+    session = start(client, "flag-only")
+    country_id = target(state)
+    response = client.post(
+        "/games/mapix/answer",
+        json=answer_payload(session, action="flag", value=country_id),
+    )
+    updated = response.get_json()
+    assert response.status_code == 200
+    assert country_id not in updated["remaining_flags"]
+
+
+def test_all_mode_has_no_prompt_and_no_perfect_result(client, state):
+    session = start(client, "all")
+    assert session["current"] is None
+    while session["result"] is None:
+        country_id = target(state)
+        session = client.post(
+            "/games/mapix/answer",
+            json=answer_payload(
+                session,
+                action="name",
+                value=state._catalog.by_id[country_id].name,
+            ),
+        ).get_json()
+    assert session["result"]["perfect_countries"] is None
+
+
 def test_build_game_uses_configured_static_root(tmp_path, monkeypatch):
     from games.mapix import build_game
 

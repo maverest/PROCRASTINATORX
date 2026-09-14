@@ -60,6 +60,40 @@ def test_template_provides_accessible_setup_and_feedback():
         assert f"<dt>{label}</dt>" in html
 
 
+def test_game_script_renders_remaining_flags_and_all_mode():
+    script = (ROOT / "static/mapix/game.js").read_text()
+    assert "session.remaining_flags" in script
+    assert "document.createElement('button')" in script
+    assert "submitAnswer('flag'" in script
+    assert "submitAnswer('name'" in script
+    assert "session.flag_done" in script
+    assert "session.territory_done" in script
+    assert "setAttribute('aria-label'" in script
+
+
+def test_result_hides_perfect_metric_for_all_mode():
+    script = (ROOT / "static/mapix/game.js").read_text()
+    assert "resultPerfect" in script
+    assert "state.session.mode === 'all'" in script
+    assert "accuracy_percent" in script
+
+
+def test_all_mode_refocuses_name_input_after_request_unlock():
+    script = (ROOT / "static/mapix/game.js").read_text()
+    busy_handler = script[script.index("function setBusy") : script.index("function syncGameControls")]
+    assert busy_handler.index("syncGameControls();") < busy_handler.index("ui.nameInput.focus();")
+
+
+def test_mapix_frontend_does_not_persist_game_results():
+    sources = "\n".join(
+        (ROOT / path).read_text()
+        for path in ("static/mapix/game.js", "templates/mapix/index.html")
+    )
+    assert "localStorage" not in sources
+    assert "sessionStorage" not in sources
+    assert "indexedDB" not in sources
+
+
 def test_world_svg_matches_all_catalog_countries():
     countries = json.loads((ROOT / "static/mapix/countries.json").read_text())
     root = ET.parse(ROOT / "static/mapix/world.svg").getroot()

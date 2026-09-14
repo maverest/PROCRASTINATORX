@@ -74,6 +74,8 @@ legend { margin-bottom: 12px; }
 .flag-panel h3 { margin-bottom: 16px; }
 .flag-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: start; }
 .flag-choice { min-height: 66px; padding: 10px; font-size: 34px; background: white; }
+.flag-choice.is-selected { background: #dbece5; border-color: var(--success); opacity: 1; }
+.flag-choice.is-wrong { border-color: var(--error); animation: answer-shake 260ms ease-in-out; }
 .game-panel[data-mode="flag-only"] .flag-grid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); }
 .game-footer { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; min-height: 66px; gap: 16px; }
 .game-footer p { color: var(--muted); font-size: 13px; }
@@ -81,12 +83,19 @@ legend { margin-bottom: 12px; }
 .name-form { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 .name-form label { font-size: 14px; }
 .name-form input { padding: 12px 14px; background: var(--surface); color: var(--ink); flex: 1; min-width: 0; max-width: 420px; }
+.name-form input.is-wrong { border-color: var(--error); animation: answer-shake 260ms ease-in-out; }
 .result-panel, .fatal-panel { max-width: 740px; margin: 12vh auto; }
 .result-panel h2, .fatal-panel h2 { margin: 12px 0 40px; font-size: clamp(32px, 5vw, 50px); }
 .result-stats { display: flex; flex-wrap: wrap; gap: 32px 48px; padding: 28px 0; margin: 0 0 32px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .result-stat dt { color: var(--muted); font-size: 13px; }
 .result-stat dd { margin: 10px 0 0; font-size: 28px; font-variant-numeric: tabular-nums; }
 .panel-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; }
+
+@keyframes answer-shake {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(-6px); }
+  70% { transform: translateX(6px); }
+}
 
 @media (max-width: 760px) {
   .mapix-app { padding: 0 18px; }
