@@ -30,6 +30,9 @@
         if (!Array.isArray(countries)) throw new Error('catalog');
         state.countries = new Map(countries.map(country => [country.id, country]));
         return state.countries;
+      }).catch(error => {
+        catalogPromise = null;
+        throw error;
       });
     }
     return catalogPromise;

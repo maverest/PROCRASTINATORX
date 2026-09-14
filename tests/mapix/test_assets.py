@@ -84,6 +84,14 @@ def test_all_mode_refocuses_name_input_after_request_unlock():
     assert busy_handler.index("syncGameControls();") < busy_handler.index("ui.nameInput.focus();")
 
 
+def test_failed_catalog_load_can_be_retried_without_dropping_successful_cache():
+    script = (ROOT / "static/mapix/game.js").read_text()
+    loader = script[script.index("function loadCatalog") : script.index("function stopTimer")]
+    assert ".catch(error => {" in loader
+    assert "catalogPromise = null;" in loader
+    assert "throw error;" in loader
+
+
 def test_mapix_frontend_does_not_persist_game_results():
     sources = "\n".join(
         (ROOT / path).read_text()
