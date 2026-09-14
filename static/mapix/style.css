@@ -61,6 +61,15 @@ legend { margin-bottom: 12px; }
 .game-panel[data-mode="flag-only"] .game-layout { grid-template-columns: minmax(0, 1fr); }
 .map-container { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--water); border: 1px solid #b9cfc7; border-radius: 16px; }
 .map-preview { position: absolute; inset: 20px; background: var(--surface); -webkit-mask: url('/static/mapix/world.svg') center / contain no-repeat; mask: url('/static/mapix/world.svg') center / contain no-repeat; pointer-events: none; }
+.map-svg { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; cursor: grab; }
+.map-svg.is-dragging, .map-svg.is-dragging * { cursor: grabbing; }
+.map-svg [data-country], .map-svg [data-target-country] { fill: var(--surface); stroke: #91a59b; stroke-width: .65px; vector-effect: non-scaling-stroke; cursor: pointer; transition: fill 140ms ease; }
+.map-svg [data-target-country] { fill: #f2d7a5; stroke: #90794f; stroke-width: 1px; pointer-events: all; }
+.map-svg [role="button"]:hover, .map-svg [role="button"]:focus-visible { fill: #e4b979; stroke: var(--ink); stroke-width: 1.5px; outline: none; }
+.map-svg [role="button"].is-found, .map-svg [role="button"].is-correct { fill: var(--success); stroke: #285847; }
+.map-svg [role="button"].is-wrong { fill: var(--error); stroke: #77232b; }
+.map-controls { position: absolute; right: 14px; bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
+.map-controls button { width: 42px; height: 42px; padding: 0; font-size: 24px; line-height: 1; box-shadow: 0 2px 8px #172e3114; }
 .flag-panel { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
 .flag-panel h3 { margin-bottom: 16px; }
 .flag-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: start; }

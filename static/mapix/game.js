@@ -7,7 +7,7 @@
     'fatalRetryButton', 'fatalMenuButton', 'backLink', 'mapContainer', 'flagPanel',
     'flagGrid', 'countryPrompt', 'progressValue', 'timerValue', 'nameForm',
     'nameInput', 'regionLabel', 'resultTime', 'resultPerfect', 'resultErrors',
-    'resultAccuracy',
+    'resultAccuracy', 'gameFeedback',
   ].map(id => [id, document.getElementById(id)]));
 
   const state = {
@@ -17,6 +17,7 @@
     activeRequest: false,
     timerOrigin: null,
     timerFrame: null,
+    map: null,
   };
 
   function stopTimer() {
@@ -94,6 +95,19 @@
       });
       if (!response.ok) throw new Error('start');
       state.session = await response.json();
+      ui.gameFeedback.textContent = '';
+      if (state.session.mode !== 'flag-only') {
+        if (!state.map) {
+          state.map = window.MapixMap.create(ui.mapContainer, {
+            onCountry: id => {
+              if (state.session?.mode === 'territory') submitAnswer('territory', id);
+            },
+          });
+        }
+        await state.map.ready;
+        state.map.setRegion(state.session.region);
+        state.map.setFound(state.session.found);
+      }
       renderSession();
       if (state.session.finished) {
         renderResult(state.session.result);
@@ -102,6 +116,57 @@
         startTimer();
       }
     } catch {
+      state.map?.destroy();
+      state.map = null;
+      showPanel(ui.fatalPanel);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleAnswerError(status, payload) {
+    if (status === 404 || status === 409 || status >= 500) {
+      showPanel(ui.fatalPanel);
+    } else {
+      ui.gameFeedback.textContent = payload.error || 'Cette réponse est impossible.';
+    }
+  }
+
+  function renderAnswer(payload) {
+    const outcome = payload.outcome;
+    if (outcome.correct) {
+      state.map.markCorrect(outcome.selected_country_id);
+      ui.gameFeedback.textContent = 'Bien trouvé !';
+    } else {
+      state.map.flashWrong(outcome.selected_country_id);
+      ui.gameFeedback.textContent = 'Essayez un autre territoire.';
+    }
+    state.session = payload;
+    if (outcome.advanced) state.map.setFound(payload.found);
+    renderSession();
+    if (payload.finished) renderResult(payload.result);
+  }
+
+  async function submitAnswer(action, value) {
+    if (state.activeRequest || !state.session || state.session.finished || ui.gamePanel.hidden) return;
+    setBusy(true);
+    try {
+      const response = await fetch('/games/mapix/answer', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          token: state.session.token,
+          question_index: state.session.question_index,
+          action,
+          value,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) return handleAnswerError(response.status, payload);
+      renderAnswer(payload);
+    } catch {
+      // La réponse a peut-être été enregistrée : ne pas renvoyer aveuglément
+      // une proposition avec un index de question devenu périmé.
       showPanel(ui.fatalPanel);
     } finally {
       setBusy(false);
@@ -157,7 +222,7 @@
       quitGame('/');
     }
   });
-  // Le câblage des réponses sera ajouté avec les interactions de jeu.
+  // Le formulaire du mode Tous sera câblé avec les autres modes.
   ui.nameForm.addEventListener('submit', event => event.preventDefault());
   window.addEventListener('pagehide', stopTimer);
 })();

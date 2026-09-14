@@ -23,6 +23,8 @@ def test_template_exposes_mapix_panels_and_controls():
     ):
         assert f'id="{element_id}"' in html
     assert '<script src="/static/mapix/game.js" defer></script>' in html
+    assert '<script src="/static/mapix/map.js" defer></script>' in html
+    assert html.index('/static/mapix/map.js') < html.index('/static/mapix/game.js')
     assert '<link rel="stylesheet" href="/static/mapix/style.css">' in html
     assert "<script>" not in html
     assert html.index('id="mapContainer"') < html.index('id="flagPanel"')
@@ -34,6 +36,16 @@ def test_setup_lists_four_modes_and_seven_regions():
         assert f'data-mode="{value}"' in html
     for value in ("world", "africa", "europe", "asia", "north-america", "south-america", "oceania"):
         assert f'data-region="{value}"' in html
+
+
+def test_map_script_loads_local_svg_and_exposes_controller():
+    script = (ROOT / "static/mapix/map.js").read_text()
+    assert "fetch('/static/mapix/world.svg')" in script
+    assert "window.MapixMap" in script
+    for method in ("setRegion", "setFound", "flashWrong", "markCorrect", "destroy"):
+        assert method in script
+    for interaction in ("wheel", "pointermove", "data-country", "data-target-country"):
+        assert interaction in script
 
 
 def test_template_provides_accessible_setup_and_feedback():
