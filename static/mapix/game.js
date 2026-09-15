@@ -166,6 +166,7 @@
       });
       if (!response.ok) throw new Error('start');
       state.session = await response.json();
+      ui.flagPanel.scrollTop = 0;
       ui.gameFeedback.textContent = '';
       if (state.session.mode !== 'flag-only') {
         if (!state.map) {

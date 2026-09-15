@@ -77,6 +77,13 @@ def test_game_script_renders_remaining_flags_and_all_mode():
     assert "setAttribute('aria-label'" in script
 
 
+def test_starting_a_game_resets_the_flag_panel_scroll_position():
+    script = (ROOT / "static/mapix/game.js").read_text()
+    start_game = script[script.index("async function startGame") : script.index("function handleAnswerError")]
+    assert "ui.flagPanel.scrollTop = 0;" in start_game
+    assert start_game.index("ui.flagPanel.scrollTop = 0;") < start_game.index("renderSession();")
+
+
 def test_result_hides_perfect_metric_for_all_mode():
     script = (ROOT / "static/mapix/game.js").read_text()
     assert "resultPerfect" in script
