@@ -112,7 +112,7 @@
       button.className = 'flag-choice';
       button.dataset.country = id;
       button.dataset.locked = String(id === lockedId);
-      button.textContent = country.flag;
+      button.append(window.MapixFlags.createImage(country));
       button.setAttribute('aria-label', `Choisir le drapeau ${country.name}`);
       if (id === lockedId) {
         button.classList.add('is-selected');

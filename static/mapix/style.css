@@ -4,7 +4,9 @@
   --muted: #62716e;
   --paper: #f5f1e8;
   --surface: #fffcf5;
-  --water: #cfe5df;
+  --water: #67a8c4;
+  --land: #bdc78a;
+  --land-edge: #6c856f;
   --accent: #bb492f;
   --success: #397764;
   --error: #bb3741;
@@ -60,10 +62,13 @@ legend { margin-bottom: 12px; }
 .game-panel[data-mode="all"] .game-layout,
 .game-panel[data-mode="flag-only"] .game-layout { grid-template-columns: minmax(0, 1fr); }
 .map-container { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--water); border: 1px solid #b9cfc7; border-radius: 16px; }
-.map-preview { position: absolute; inset: 20px; background: var(--surface); -webkit-mask: url('/static/mapix/world.svg') center / contain no-repeat; mask: url('/static/mapix/world.svg') center / contain no-repeat; pointer-events: none; }
+.map-preview { position: absolute; inset: 20px; background: var(--land); -webkit-mask: url('/static/mapix/world.svg') center / contain no-repeat; mask: url('/static/mapix/world.svg') center / contain no-repeat; pointer-events: none; }
 .map-svg { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; cursor: grab; }
 .map-svg.is-dragging, .map-svg.is-dragging * { cursor: grabbing; }
-.map-svg [data-country], .map-svg [data-target-country] { fill: var(--surface); stroke: #91a59b; stroke-width: .65px; vector-effect: non-scaling-stroke; cursor: pointer; transition: fill 140ms ease; }
+.map-svg #mapix-relief, .map-svg #mapix-lakes { pointer-events: none; }
+.map-svg #mapix-relief path { fill: none; stroke: #725c3d; stroke-width: 8px; stroke-linecap: round; stroke-linejoin: round; opacity: .38; }
+.map-svg #mapix-lakes path { fill: #4d96b8; stroke: #d2edf4; stroke-width: 3px; opacity: .9; }
+.map-svg [data-country], .map-svg [data-target-country] { fill: rgba(189, 199, 138, .86); stroke: var(--land-edge); stroke-width: .65px; vector-effect: non-scaling-stroke; cursor: pointer; transition: fill 140ms ease; }
 .map-svg [data-target-country] { fill: #f2d7a5; stroke: #90794f; stroke-width: 1px; pointer-events: all; }
 .map-svg [role="button"]:hover, .map-svg [role="button"]:focus-visible { fill: #e4b979; stroke: var(--ink); stroke-width: 1.5px; outline: none; }
 .map-svg [role="button"].is-found, .map-svg [role="button"].is-correct { fill: var(--success); stroke: #285847; }
@@ -73,10 +78,11 @@ legend { margin-bottom: 12px; }
 .flag-panel { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
 .flag-panel h3 { margin-bottom: 16px; }
 .flag-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: start; }
-.flag-choice { min-height: 66px; padding: 10px; font-size: 34px; background: white; }
+.flag-choice { min-height: 92px; padding: 9px; background: white; display: grid; place-items: center; overflow: hidden; }
+.flag-image { display: block; width: min(100%, 112px); aspect-ratio: 4 / 3; object-fit: contain; filter: drop-shadow(0 2px 3px #172e312b); pointer-events: none; }
 .flag-choice.is-selected { background: #dbece5; border-color: var(--success); opacity: 1; }
 .flag-choice.is-wrong { border-color: var(--error); animation: answer-shake 260ms ease-in-out; }
-.game-panel[data-mode="flag-only"] .flag-grid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); }
+.game-panel[data-mode="flag-only"] .flag-grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
 .game-footer { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; min-height: 66px; gap: 16px; }
 .game-footer p { color: var(--muted); font-size: 13px; }
 .text-button { padding: 10px 2px; background: transparent; border-color: transparent; color: var(--muted); }
@@ -107,8 +113,9 @@ legend { margin-bottom: 12px; }
   .game-layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .game-panel[data-mode="flag-territory"] .game-layout { grid-template-rows: minmax(0, 1.3fr) minmax(0, 1fr); }
   .flag-panel { padding: 12px; }
-  .flag-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
-  .flag-choice { min-height: 58px; }
+  .flag-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+  .flag-choice { min-height: 78px; padding: 7px; }
+  .flag-image { width: min(100%, 96px); }
   .name-form { gap: 8px; flex-wrap: wrap; }
   .name-form label { width: 100%; }
   .name-form input { max-width: none; }

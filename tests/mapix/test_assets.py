@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -10,6 +11,7 @@ import pytest
 
 ROOT = Path(__file__).parents[2]
 SVG_NAMESPACE = 'xmlns="http://www.w3.org/2000/svg"'
+SVG_TAG = "{http://www.w3.org/2000/svg}svg"
 
 
 def test_template_exposes_mapix_panels_and_controls():
@@ -24,7 +26,12 @@ def test_template_exposes_mapix_panels_and_controls():
         assert f'id="{element_id}"' in html
     assert '<script src="/static/mapix/game.js" defer></script>' in html
     assert '<script src="/static/mapix/map.js" defer></script>' in html
-    assert html.index('/static/mapix/map.js') < html.index('/static/mapix/game.js')
+    assert '<script src="/static/mapix/flags.js" defer></script>' in html
+    assert (
+        html.index('/static/mapix/map.js')
+        < html.index('/static/mapix/flags.js')
+        < html.index('/static/mapix/game.js')
+    )
     assert '<link rel="stylesheet" href="/static/mapix/style.css">' in html
     assert "<script>" not in html
     assert html.index('id="mapContainer"') < html.index('id="flagPanel"')
@@ -132,6 +139,108 @@ def test_natural_earth_license_is_packaged():
     assert "naturalearthdata.com" in text
 
 
+def test_flag_icons_license_and_pinned_source_are_packaged():
+    license_text = (ROOT / "static/mapix/FLAG_ICONS_LICENSE.txt").read_text()
+    source_text = (ROOT / "static/mapix/FLAGS_SOURCE.md").read_text()
+    assert "MIT License" in license_text
+    assert "Panayiotis Lipiridis" in license_text
+    assert "flag-icons 7.5.0" in source_text
+    assert "5502d1bb0bda9f258d726d3c084a2d57a07cfdfa6d2ed18cbb5a1ee11b307778" in source_text
+
+
+def test_every_catalog_country_has_a_safe_local_svg_flag():
+    countries = json.loads((ROOT / "static/mapix/countries.json").read_text())
+    flag_dir = ROOT / "static/mapix/flags"
+    flag_files = sorted(flag_dir.glob("*.svg"))
+    assert [path.stem for path in flag_files] == sorted(
+        country["id"].lower() for country in countries
+    )
+    assert len(flag_files) == 195
+
+    for path in flag_files:
+        source = path.read_text(encoding="utf-8")
+        root = ET.fromstring(source)
+        assert root.tag == SVG_TAG, path.name
+        assert root.attrib.get("viewBox"), path.name
+        lowered = source.lower()
+        assert "<script" not in lowered, path.name
+        assert "javascript:" not in lowered, path.name
+        content_without_namespaces = re.sub(r'xmlns(?::\w+)?="[^"]+"', "", source)
+        assert "http://" not in content_without_namespaces, path.name
+        assert "https://" not in content_without_namespaces, path.name
+        assert all(
+            not (
+                key.rsplit("}", 1)[-1] == "href"
+                and not value.startswith("#")
+            )
+            for node in root.iter()
+            for key, value in node.attrib.items()
+        ), path.name
+        assert all(
+            not key.lower().startswith("on")
+            for node in root.iter()
+            for key in node.attrib
+        ), path.name
+
+
+def test_flag_image_factory_creates_a_local_decorative_image():
+    assert shutil.which("node"), "Node.js est requis pour valider le composant de drapeau"
+    helper = ROOT / "static/mapix/flags.js"
+    probe = r"""
+global.window = {};
+global.document = {
+  createElement(tag) {
+    return {
+      tagName: tag.toUpperCase(),
+      setAttribute(name, value) { this[name] = value; },
+      textContent: '',
+    };
+  },
+};
+require(process.argv[1]);
+const image = window.MapixFlags.createImage({id: 'FR', name: 'France', flag: '🇫🇷'});
+process.stdout.write(JSON.stringify({
+  tag: image.tagName,
+  src: image.src,
+  alt: image.alt,
+  hidden: image['aria-hidden'],
+  draggable: image.draggable,
+  text: image.textContent,
+}));
+"""
+    result = subprocess.run(
+        ["node", "-e", probe, str(helper)], capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == {
+        "tag": "IMG",
+        "src": "/static/mapix/flags/fr.svg",
+        "alt": "",
+        "hidden": "true",
+        "draggable": False,
+        "text": "",
+    }
+
+
+def assert_physical_layers(root):
+    groups = {node.attrib.get("id"): node for node in root.iter() if node.tag.endswith("g")}
+    assert list(groups).index("mapix-relief") < list(groups).index("mapix-countries")
+    assert list(groups).index("mapix-lakes") < list(groups).index("mapix-countries")
+    for layer_id in ("mapix-relief", "mapix-lakes"):
+        layer = groups[layer_id]
+        assert layer.attrib.get("pointer-events") == "none"
+        assert len(list(layer)) >= 4
+        assert all(
+            "data-country" not in node.attrib
+            and "data-target-country" not in node.attrib
+            for node in layer.iter()
+        )
+
+
+def test_packaged_map_contains_non_interactive_physical_layers_below_countries():
+    assert_physical_layers(ET.parse(ROOT / "static/mapix/world.svg").getroot())
+
+
 def feature(code, coordinates, geometry_type="Polygon", name="Example"):
     return {"type": "Feature", "properties": {"ISO3166-1-Alpha-2": code, "name": name},
             "geometry": {"type": geometry_type, "coordinates": coordinates}}
@@ -168,6 +277,13 @@ def test_converter_projects_merges_simplifies_and_retains_holes(tmp_path):
     result, output = generate(tmp_path, list(reversed(features)), ["FR"])
     assert result.returncode == 0, result.stderr
     assert output.read_bytes() == first
+
+
+def test_converter_always_emits_safe_physical_layers_below_countries(tmp_path):
+    ring = [[[0, 0], [2, 0], [2, 2], [0, 0]]]
+    result, output = generate(tmp_path, [feature("FR", ring)], ["FR"])
+    assert result.returncode == 0, result.stderr
+    assert_physical_layers(ET.parse(output).getroot())
 
 
 def test_converter_enlarges_small_country_at_largest_polygon(tmp_path):

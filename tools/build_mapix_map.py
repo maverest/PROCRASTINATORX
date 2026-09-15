@@ -20,6 +20,31 @@ import re
 TOLERANCE = 0.35
 ISO_REPAIRS = {"France": "FR", "Norway": "NO"}
 
+# Relief volontairement stylisé et léger : ces tracés décoratifs utilisent la
+# même projection équirectangulaire que les pays et restent sous les zones de
+# jeu, afin que les états trouvé/erreur gardent toujours la priorité visuelle.
+PHYSICAL_LAYERS = [
+    '  <g id="mapix-relief" pointer-events="none">',
+    '    <path d="M640,400 L700,470 L735,545 L760,625 L790,700" />',  # Rocheuses
+    '    <path d="M1045,830 L1090,960 L1115,1090 L1145,1230 L1180,1390 L1220,1510" />',  # Andes
+    '    <path d="M1690,585 L1780,565 L1870,575 L1940,565" />',  # Atlas
+    '    <path d="M1880,440 L1940,425 L2010,440 L2070,425" />',  # Alpes / Carpates
+    '    <path d="M2450,590 L2540,565 L2640,575 L2740,550 L2830,570" />',  # Himalaya
+    '    <path d="M2140,835 L2160,910 L2180,1010" />',  # hauts plateaux d\'Afrique orientale
+    '    <path d="M3180,1110 L3230,1190 L3270,1300 L3300,1400" />',  # cordillère australienne
+    '    <path d="M940,500 L990,550 L1040,610" />',  # Appalaches
+    '  </g>',
+    '  <g id="mapix-lakes" pointer-events="none">',
+    '    <path d="M920,450 L965,435 L1005,455 L990,480 L945,482 Z" />',  # Grands Lacs
+    '    <path d="M2285,515 L2325,485 L2350,535 L2330,590 L2295,570 Z" />',  # Caspienne
+    '    <path d="M2115,900 L2150,895 L2165,920 L2130,930 Z" />',  # Victoria
+    '    <path d="M2085,955 L2100,950 L2110,1025 L2095,1040 Z" />',  # Tanganyika
+    '    <path d="M2840,420 L2885,390 L2940,405 L2910,430 L2860,435 Z" />',  # Baïkal
+    '    <path d="M1100,1050 L1120,1045 L1130,1070 L1110,1080 Z" />',  # Titicaca
+    '    <path d="M2385,440 L2415,435 L2425,460 L2395,465 Z" />',  # Aral
+    '  </g>',
+]
+
 
 def country_features(source, country_ids):
     features = source["features"]
@@ -134,6 +159,7 @@ def build_svg(source, catalog):
             raise ValueError(f"Aucune surface ni cible pour {code}")
     return '\n'.join([
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3600 1800" role="img" aria-label="Carte des pays du monde">',
+        *PHYSICAL_LAYERS,
         '  <g id="mapix-countries">', *paths, '  </g>',
         '  <g id="mapix-targets">', *targets, '  </g>', '</svg>', '',
     ])
