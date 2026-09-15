@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -183,43 +182,19 @@ def test_every_catalog_country_has_a_safe_local_svg_flag():
         ), path.name
 
 
-def test_flag_image_factory_creates_a_local_decorative_image():
-    assert shutil.which("node"), "Node.js est requis pour valider le composant de drapeau"
-    helper = ROOT / "static/mapix/flags.js"
-    probe = r"""
-global.window = {};
-global.document = {
-  createElement(tag) {
-    return {
-      tagName: tag.toUpperCase(),
-      setAttribute(name, value) { this[name] = value; },
-      textContent: '',
-    };
-  },
-};
-require(process.argv[1]);
-const image = window.MapixFlags.createImage({id: 'FR', name: 'France', flag: '🇫🇷'});
-process.stdout.write(JSON.stringify({
-  tag: image.tagName,
-  src: image.src,
-  alt: image.alt,
-  hidden: image['aria-hidden'],
-  draggable: image.draggable,
-  text: image.textContent,
-}));
-"""
-    result = subprocess.run(
-        ["node", "-e", probe, str(helper)], capture_output=True, text=True
-    )
-    assert result.returncode == 0, result.stderr
-    assert json.loads(result.stdout) == {
-        "tag": "IMG",
-        "src": "/static/mapix/flags/fr.svg",
-        "alt": "",
-        "hidden": "true",
-        "draggable": False,
-        "text": "",
-    }
+def test_flag_image_factory_contract_is_local_accessible_and_has_no_emoji():
+    factory = (ROOT / "static/mapix/flags.js").read_text()
+    game = (ROOT / "static/mapix/game.js").read_text()
+
+    assert "document.createElement('img')" in factory
+    assert "`/static/mapix/flags/${country.id.toLowerCase()}.svg`" in factory
+    assert "image.alt = '';" in factory
+    assert "image.draggable = false;" in factory
+    assert "image.setAttribute('aria-hidden', 'true');" in factory
+    assert "country.name" not in factory
+    assert "country.flag" not in factory
+    assert "button.append(window.MapixFlags.createImage(country));" in game
+    assert "button.textContent = country.flag" not in game
 
 
 def assert_physical_layers(root):
