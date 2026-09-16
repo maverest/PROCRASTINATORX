@@ -13,6 +13,7 @@ RULE_MESSAGES = {
     "invalid action": "Action invalide pour ce mode.",
     "invalid country": "Pays inconnu.",
     "game is finished": "La partie est terminée.",
+    "solution unavailable": "Solution indisponible pour ce mode.",
 }
 
 
@@ -71,6 +72,14 @@ def build_blueprint(state: MapixState) -> Blueprint:
             _require_integer(payload, "question_index"),
             _require_string(payload, "action"),
             _require_string(payload, "value"),
+        ))
+
+    @blueprint.post("/solution")
+    def solution():
+        payload = _require_payload()
+        return jsonify(state.solution(
+            _require_string(payload, "token"),
+            _require_integer(payload, "question_index"),
         ))
 
     @blueprint.post("/quit")

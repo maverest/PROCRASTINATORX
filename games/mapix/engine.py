@@ -15,6 +15,7 @@ VALID_ACTIONS = {
     "flag-only": frozenset({"flag"}),
     "all": frozenset({"name"}),
 }
+ACTION_ORDER = ("flag", "territory", "name")
 
 
 class GameRuleError(ValueError):
@@ -56,6 +57,9 @@ class Game:
     started_at: float
     finished_at: float | None
     current_is_perfect: bool = field(default=True, init=False)
+    current_errors: int = field(default=0, init=False)
+    current_revealed: bool = field(default=False, init=False)
+    imperfect: set[str] = field(default_factory=set, init=False)
 
     @property
     def current_country_id(self) -> str | None:
@@ -123,6 +127,32 @@ def apply_answer(
     return _apply_sequential(game, action, value, now)
 
 
+def apply_solution(game: Game) -> None:
+    """Révèle la réponse courante sans la valider."""
+    if game.mode == "all":
+        raise GameRuleError("solution unavailable")
+    if game.finished_at is not None:
+        raise GameRuleError("game is finished")
+    _record_current_error(game)
+    game.current_revealed = True
+
+
+def revealed_actions(game: Game) -> tuple[str, ...]:
+    """Retourne les actions encore attendues dont la solution est visible."""
+    if (
+        game.mode == "all"
+        or game.finished_at is not None
+        or not (game.current_revealed or game.current_errors >= 3)
+    ):
+        return ()
+    required = VALID_ACTIONS[game.mode]
+    return tuple(
+        action
+        for action in ACTION_ORDER
+        if action in required and not getattr(game, f"{action}_done")
+    )
+
+
 def _apply_name(
     game: Game, catalog: CountryCatalog, value: str, now: float
 ) -> AnswerOutcome:
@@ -152,8 +182,7 @@ def _apply_sequential(
 ) -> AnswerOutcome:
     target = game.current_country_id
     if value != target:
-        game.errors += 1
-        game.current_is_perfect = False
+        _record_current_error(game)
         return _outcome(False, selected_country_id=value)
 
     done_attribute = f"{action}_done"
@@ -171,6 +200,8 @@ def _apply_sequential(
     game.flag_done = False
     game.territory_done = False
     game.current_is_perfect = True
+    game.current_errors = 0
+    game.current_revealed = False
     finished = game.current_index == len(game.order)
     if finished:
         game.finished_at = now
@@ -180,6 +211,15 @@ def _apply_sequential(
         finished=finished,
         selected_country_id=value,
     )
+
+
+def _record_current_error(game: Game) -> None:
+    target = game.current_country_id
+    game.errors += 1
+    game.current_errors += 1
+    game.current_is_perfect = False
+    if target is not None:
+        game.imperfect.add(target)
 
 
 def _outcome(

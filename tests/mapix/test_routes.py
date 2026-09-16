@@ -68,14 +68,17 @@ def test_invalid_start_preserves_session(client, state, field, value, message):
     assert state.snapshot() == before
 
 
-@pytest.mark.parametrize("endpoint,field", [("session", "mode"), ("answer", "token"), ("quit", "token")])
+@pytest.mark.parametrize("endpoint,field", [
+    ("session", "mode"), ("answer", "token"), ("solution", "token"),
+    ("quit", "token"),
+])
 def test_empty_object_reports_first_missing_field(client, endpoint, field):
     response = client.post(f"/games/mapix/{endpoint}", json={})
     assert response.status_code == 400
     assert response.get_json()["field"] == field
 
 
-@pytest.mark.parametrize("endpoint", ["session", "answer", "quit"])
+@pytest.mark.parametrize("endpoint", ["session", "answer", "solution", "quit"])
 @pytest.mark.parametrize("body", [None, "{", "null", "[]", '"text"', "true", "3"])
 def test_missing_or_non_object_json_is_rejected_without_mutation(client, state, endpoint, body):
     before = start(client)
@@ -135,7 +138,7 @@ def test_quit_requires_nonempty_token(client, state, value):
     assert state.snapshot() == before
 
 
-@pytest.mark.parametrize("endpoint", ["session", "answer", "quit"])
+@pytest.mark.parametrize("endpoint", ["session", "answer", "solution", "quit"])
 def test_missing_session_returns_json_404(client, endpoint):
     if endpoint == "session":
         response = client.get("/games/mapix/session")
@@ -145,7 +148,7 @@ def test_missing_session_returns_json_404(client, endpoint):
     assert response.get_json() == {"error": "Aucune partie en cours.", "field": None}
 
 
-@pytest.mark.parametrize("endpoint", ["answer", "quit"])
+@pytest.mark.parametrize("endpoint", ["answer", "solution", "quit"])
 def test_stale_token_returns_conflict_without_mutation(client, state, endpoint):
     old = start(client)
     before = start(client)
@@ -236,6 +239,54 @@ def test_combined_flag_stays_until_territory_is_also_correct(client, state):
     after_territory = response.get_json()
     assert response.status_code == 200
     assert country_id not in after_territory["remaining_flags"]
+
+
+def test_solution_endpoint_counts_error_and_reveals_without_advancing(client, state):
+    session = start(client, "flag-territory")
+    response = client.post(
+        "/games/mapix/solution",
+        json={"token": session["token"], "question_index": 0},
+    )
+
+    payload = response.get_json()
+    assert response.status_code == 200
+    assert payload["errors"] == 1
+    assert payload["current_errors"] == 1
+    assert payload["revealed_actions"] == ["flag", "territory"]
+    assert payload["question_index"] == 0
+    assert payload["found"] == []
+
+
+def test_solution_endpoint_rejects_all_mode_without_mutation(client, state):
+    session = start(client, "all")
+    response = client.post(
+        "/games/mapix/solution",
+        json={"token": session["token"], "question_index": 0},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Solution indisponible pour ce mode.", "field": None,
+    }
+    assert state.snapshot() == session
+
+
+def test_solution_endpoint_rejects_stale_question_without_mutation(client, state):
+    session = start(client)
+    client.post(
+        "/games/mapix/answer",
+        json=answer_payload(session, value=target(state)),
+    )
+    before = state.snapshot()
+
+    response = client.post(
+        "/games/mapix/solution",
+        json={"token": session["token"], "question_index": 0},
+    )
+
+    assert response.status_code == 409
+    assert response.get_json()["field"] == "question_index"
+    assert state.snapshot() == before
 
 
 def test_flag_only_removes_flag_immediately(client, state):

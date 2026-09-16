@@ -44,6 +44,7 @@
     let initialView = [...REGION_VIEWS.world];
     let view = [...initialView];
     let found = new Set();
+    let imperfect = new Set();
     let drag = null;
     let suppressClick = false;
     const countries = new Map();
@@ -98,7 +99,7 @@
       for (const timer of timers.values()) clearTimeout(timer);
       timers.clear();
       for (const nodes of countries.values()) {
-        for (const node of nodes) node.classList.remove('is-wrong', 'is-correct');
+        for (const node of nodes) node.classList.remove('is-wrong', 'is-correct', 'is-solution');
       }
     }
 
@@ -112,14 +113,23 @@
       renderView();
     }
 
-    function setFound(countryIds) {
+    function setFound(countryIds, imperfectIds = []) {
       if (destroyed) return;
       found = new Set(countryIds);
+      imperfect = new Set(imperfectIds);
       for (const [id, nodes] of countries) {
         for (const node of nodes) {
           node.classList.toggle('is-found', found.has(id));
+          node.classList.toggle('is-imperfect', found.has(id) && imperfect.has(id));
           if (found.has(id)) node.classList.remove('is-correct');
         }
+      }
+    }
+
+    function setRevealed(id) {
+      if (destroyed) return;
+      for (const [country, nodes] of countries) {
+        for (const node of nodes) node.classList.toggle('is-solution', country === id);
       }
     }
 
@@ -133,13 +143,14 @@
       }, 650));
     }
 
-    function markCorrect(id) {
+    function markCorrect(id, isImperfect = false) {
       if (destroyed || !countries.has(id)) return;
       clearTimeout(timers.get(id));
       timers.delete(id);
       for (const node of countries.get(id)) {
         node.classList.remove('is-wrong');
         node.classList.add('is-correct');
+        node.classList.toggle('is-imperfect', isImperfect);
       }
     }
 
@@ -231,7 +242,7 @@
       renderView();
     })();
 
-    return {ready, setRegion, setFound, flashWrong, markCorrect, destroy};
+    return {ready, setRegion, setFound, setRevealed, flashWrong, markCorrect, destroy};
   }
 
   window.MapixMap = {create};

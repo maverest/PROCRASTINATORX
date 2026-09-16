@@ -36,11 +36,13 @@ def target():
     return read
 
 
-@pytest.mark.parametrize("operation", ["snapshot", "answer", "quit"])
+@pytest.mark.parametrize("operation", ["snapshot", "answer", "solution", "quit"])
 def test_empty_state_rejects_operations(state, operation):
     with pytest.raises(NoActiveGame):
         if operation == "answer":
             state.answer("missing", 0, "territory", "CH")
+        elif operation == "solution":
+            state.solution("missing", 0)
         elif operation == "quit":
             state.quit("missing")
         else:
@@ -106,6 +108,9 @@ def test_public_payload_does_not_expose_target_or_question_order(state, catalog,
     assert session["finished"] is False
     assert session["flag_done"] is False
     assert session["territory_done"] is False
+    assert session["current_errors"] == 0
+    assert session["revealed_actions"] == []
+    assert session["imperfect"] == []
     # Les choix suivent un ordre public stable, jamais l'ordre privé du tirage.
     assert session["remaining_flags"] == sorted(
         country.id for country in catalog.for_region("south-america")
@@ -116,7 +121,8 @@ def test_public_payload_does_not_expose_target_or_question_order(state, catalog,
     assert set(session) == {
         "mode", "region", "token", "total", "question_index", "errors", "found",
         "remaining_flags", "current", "flag_done", "territory_done", "result",
-        "finished", "elapsed_seconds",
+        "finished", "elapsed_seconds", "current_errors", "revealed_actions",
+        "imperfect",
     }
 
 
@@ -209,3 +215,50 @@ def test_two_simultaneous_correct_answers_advance_exactly_once(state, target):
     assert after["found"] == [country_id]
     assert after["question_index"] == 1
     assert after["errors"] == 0
+
+
+def test_solution_reveals_current_target_without_advancing(state, target):
+    session = state.start("flag-territory", "europe")
+    country_id = target(state)
+
+    response = state.solution(session["token"], 0)
+
+    assert response["errors"] == 1
+    assert response["current_errors"] == 1
+    assert response["revealed_actions"] == ["flag", "territory"]
+    assert response["imperfect"] == [country_id]
+    assert response["question_index"] == 0
+    assert response["found"] == []
+    assert response["flag_done"] is False
+    assert response["territory_done"] is False
+
+
+def test_combined_solution_reveals_only_action_still_missing(state, target):
+    session = state.start("flag-territory", "europe")
+    country_id = target(state)
+    after_flag = state.answer(session["token"], 0, "flag", country_id)
+
+    response = state.solution(after_flag["token"], 0)
+
+    assert response["revealed_actions"] == ["territory"]
+    assert response["flag_done"] is True
+
+
+def test_stale_solution_cannot_mutate_next_question(state, target):
+    session = state.start("territory", "europe")
+    state.answer(session["token"], 0, "territory", target(state))
+    before = state.snapshot()
+
+    with pytest.raises(StaleQuestion):
+        state.solution(session["token"], 0)
+
+    assert state.snapshot() == before
+
+
+def test_solution_rejects_all_mode_without_mutation(state):
+    before = state.start("all", "europe")
+
+    with pytest.raises(GameRuleError, match="solution"):
+        state.solution(before["token"], 0)
+
+    assert state.snapshot() == before

@@ -10,7 +10,9 @@ from games.mapix.engine import (
     GameResult,
     GameRuleError,
     apply_answer,
+    apply_solution,
     new_game,
+    revealed_actions,
     result_for,
 )
 
@@ -179,5 +181,76 @@ def test_finished_game_rejects_answers_without_mutating(catalog):
 
     with pytest.raises(GameRuleError, match="finished"):
         apply_answer(game, catalog, "flag", "CH", now=2.0)
+
+    assert game == before
+
+
+def test_solution_counts_one_error_and_reveals_without_validating(catalog):
+    game = game_with_order(catalog, "territory", ["CH", "FR"], now=0.0)
+
+    apply_solution(game)
+
+    assert game.errors == 1
+    assert game.current_errors == 1
+    assert game.imperfect == {"CH"}
+    assert revealed_actions(game) == ("territory",)
+    assert game.current_index == 0
+    assert game.found == set()
+    assert game.territory_done is False
+
+
+def test_three_wrong_answers_reveal_only_combined_actions_still_missing(catalog):
+    game = game_with_order(catalog, "flag-territory", ["CH", "FR"], now=0.0)
+    apply_answer(game, catalog, "territory", "CH", now=1.0)
+
+    for _ in range(3):
+        apply_answer(game, catalog, "flag", "FR", now=2.0)
+
+    assert game.current_errors == 3
+    assert revealed_actions(game) == ("flag",)
+    assert game.imperfect == {"CH"}
+    assert game.territory_done is True
+    assert game.flag_done is False
+
+
+def test_errors_after_a_correct_territory_turn_it_imperfect(catalog):
+    game = game_with_order(catalog, "flag-territory", ["CH"], now=0.0)
+    apply_answer(game, catalog, "territory", "CH", now=1.0)
+
+    apply_answer(game, catalog, "flag", "FR", now=2.0)
+
+    assert game.imperfect == {"CH"}
+    assert game.current_is_perfect is False
+
+
+def test_next_question_resets_reveal_and_current_error_count(catalog):
+    game = game_with_order(catalog, "territory", ["CH", "FR"], now=0.0)
+    apply_solution(game)
+
+    apply_answer(game, catalog, "territory", "CH", now=1.0)
+
+    assert game.current_country_id == "FR"
+    assert game.current_errors == 0
+    assert revealed_actions(game) == ()
+    assert game.imperfect == {"CH"}
+
+
+def test_solution_rejects_all_mode_without_mutating(catalog):
+    game = game_with_order(catalog, "all", ["CH"], now=0.0)
+    before = copy.deepcopy(game)
+
+    with pytest.raises(GameRuleError, match="solution"):
+        apply_solution(game)
+
+    assert game == before
+
+
+def test_solution_rejects_finished_game_without_mutating(catalog):
+    game = game_with_order(catalog, "territory", ["CH"], now=0.0)
+    apply_answer(game, catalog, "territory", "CH", now=1.0)
+    before = copy.deepcopy(game)
+
+    with pytest.raises(GameRuleError, match="finished"):
+        apply_solution(game)
 
     assert game == before

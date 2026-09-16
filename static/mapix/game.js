@@ -4,6 +4,7 @@
   const ui = Object.fromEntries([
     'setupPanel', 'gamePanel', 'resultPanel', 'fatalPanel', 'modeChoices',
     'regionChoices', 'playButton', 'quitButton', 'retryButton', 'menuButton',
+    'solutionButton',
     'fatalRetryButton', 'fatalMenuButton', 'backLink', 'mapContainer', 'flagPanel',
     'flagGrid', 'countryPrompt', 'progressValue', 'timerValue', 'nameForm',
     'nameInput', 'nameSubmit', 'regionLabel', 'resultTime', 'resultPerfectStat',
@@ -71,7 +72,7 @@
 
   function setBusy(busy) {
     state.activeRequest = busy;
-    for (const button of [ui.playButton, ui.quitButton, ui.retryButton, ui.fatalRetryButton, ui.menuButton, ui.fatalMenuButton]) {
+    for (const button of [ui.playButton, ui.quitButton, ui.solutionButton, ui.retryButton, ui.fatalRetryButton, ui.menuButton, ui.fatalMenuButton]) {
       button.disabled = busy;
     }
     for (const button of document.querySelectorAll('[data-mode], [data-region]')) button.disabled = busy;
@@ -87,6 +88,7 @@
     const canName = canAnswer && state.session.mode === 'all';
     ui.nameInput.disabled = !canName;
     ui.nameSubmit.disabled = !canName;
+    ui.solutionButton.disabled = !canAnswer || state.session.mode === 'all';
     for (const button of ui.flagGrid.querySelectorAll('.flag-choice')) {
       button.disabled = !canAnswer || button.dataset.locked === 'true';
     }
@@ -104,6 +106,7 @@
     ui.flagGrid.replaceChildren();
     if (!['flag-territory', 'flag-only'].includes(state.session.mode)) return;
     const lockedId = state.session.flag_done ? currentCountryId() : null;
+    const revealedId = state.session.revealed_actions.includes('flag') ? currentCountryId() : null;
     for (const id of state.session.remaining_flags) {
       const country = state.countries.get(id);
       if (!country) continue;
@@ -118,6 +121,7 @@
         button.classList.add('is-selected');
         button.setAttribute('aria-pressed', 'true');
       }
+      if (id === revealedId) button.classList.add('is-solution');
       button.addEventListener('click', () => submitAnswer('flag', id));
       ui.flagGrid.append(button);
     }
@@ -130,14 +134,21 @@
     ui.mapContainer.hidden = session.mode === 'flag-only';
     ui.flagPanel.hidden = !['flag-territory', 'flag-only'].includes(session.mode);
     ui.nameForm.hidden = session.mode !== 'all';
+    ui.solutionButton.hidden = session.mode === 'all';
     ui.countryPrompt.hidden = session.mode === 'all';
     ui.countryPrompt.textContent = session.current?.name || '';
     ui.progressValue.textContent = `${session.found.length} / ${session.total}`;
     ui.regionLabel.textContent = [...ui.regionChoices.querySelectorAll('button')]
       .find(button => button.dataset.region === session.region).textContent;
     renderFlags();
-    state.map?.setFound(session.found);
-    if (session.territory_done) state.map?.markCorrect(currentCountryId());
+    state.map?.setFound(session.found, session.imperfect);
+    state.map?.setRevealed(
+      session.revealed_actions.includes('territory') ? currentCountryId() : null,
+    );
+    if (session.territory_done) {
+      const id = currentCountryId();
+      state.map?.markCorrect(id, session.imperfect.includes(id));
+    }
     syncGameControls();
   }
 
@@ -223,9 +234,6 @@
     if (outcome.duplicate) {
       ui.gameFeedback.textContent = '';
     } else if (outcome.correct) {
-      if (action === 'territory' && !outcome.advanced) {
-        state.map?.markCorrect(outcome.selected_country_id);
-      }
       ui.gameFeedback.textContent = 'Bien trouvé !';
     } else {
       if (action === 'territory') state.map?.flashWrong(outcome.selected_country_id);
@@ -262,6 +270,31 @@
     } catch {
       // La réponse a peut-être été enregistrée : ne pas renvoyer aveuglément
       // une proposition avec un index de question devenu périmé.
+      showPanel(ui.fatalPanel);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function requestSolution() {
+    if (state.activeRequest || !state.session || state.session.finished ||
+        state.session.mode === 'all' || ui.gamePanel.hidden) return;
+    setBusy(true);
+    try {
+      const response = await fetch('/games/mapix/solution', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          token: state.session.token,
+          question_index: state.session.question_index,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) return handleAnswerError(response.status, payload);
+      state.session = payload;
+      renderSession();
+      ui.gameFeedback.textContent = 'Cliquez sur la réponse.';
+    } catch {
       showPanel(ui.fatalPanel);
     } finally {
       setBusy(false);
@@ -312,6 +345,7 @@
   ui.menuButton.addEventListener('click', showSetup);
   ui.fatalMenuButton.addEventListener('click', showSetup);
   ui.quitButton.addEventListener('click', () => quitGame());
+  ui.solutionButton.addEventListener('click', requestSolution);
   ui.backLink.addEventListener('click', event => {
     if (state.activeRequest) {
       event.preventDefault();

@@ -10,7 +10,15 @@ import threading
 import time
 
 from .countries import CountryCatalog
-from .engine import AnswerOutcome, Game, apply_answer, new_game, result_for
+from .engine import (
+    AnswerOutcome,
+    Game,
+    apply_answer,
+    apply_solution,
+    new_game,
+    result_for,
+    revealed_actions,
+)
 
 
 class NoActiveGame(Exception):
@@ -70,6 +78,15 @@ class MapixState:
             self._require_game()
             return self._payload(self._clock())
 
+    def solution(self, token: str, question_index: int) -> dict:
+        """Révèle la cible courante sans la valider, sous le verrou du tour."""
+        with self._lock:
+            game = self._require_token(token)
+            if question_index != game.current_index:
+                raise StaleQuestion
+            apply_solution(game)
+            return self._payload(self._clock())
+
     def quit(self, token: str) -> bool:
         """Efface la partie uniquement si le jeton est encore valide."""
         with self._lock:
@@ -112,6 +129,9 @@ class MapixState:
             "current": current,
             "flag_done": game.flag_done,
             "territory_done": game.territory_done,
+            "current_errors": game.current_errors,
+            "revealed_actions": list(revealed_actions(game)),
+            "imperfect": sorted(game.imperfect),
             "finished": finished,
             "result": asdict(result_for(game)) if finished else None,
         }

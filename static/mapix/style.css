@@ -9,6 +9,7 @@
   --land-edge: #6c856f;
   --accent: #bb492f;
   --success: #397764;
+  --warning: #d9aa3a;
   --error: #bb3741;
   --line: #d9d5c9;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -72,7 +73,10 @@ legend { margin-bottom: 12px; }
 .map-svg [data-target-country] { fill: #f2d7a5; stroke: #90794f; stroke-width: 1px; pointer-events: all; }
 .map-svg [role="button"]:hover, .map-svg [role="button"]:focus-visible { fill: #e4b979; stroke: var(--ink); stroke-width: 1.5px; outline: none; }
 .map-svg [role="button"].is-found, .map-svg [role="button"].is-correct { fill: var(--success); stroke: #285847; }
+.map-svg [role="button"].is-found.is-imperfect,
+.map-svg [role="button"].is-correct.is-imperfect { fill: var(--warning); stroke: #765b19; }
 .map-svg [role="button"].is-wrong { fill: var(--error); stroke: #77232b; }
+.map-svg [role="button"].is-solution { fill: #f4cf55; stroke: #5d4610; stroke-width: 2px; animation: solution-pulse 850ms ease-in-out infinite alternate; }
 .map-controls { position: absolute; right: 14px; bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
 .map-controls button { width: 42px; height: 42px; padding: 0; font-size: 24px; line-height: 1; box-shadow: 0 2px 8px #172e3114; }
 .flag-panel { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
@@ -82,9 +86,11 @@ legend { margin-bottom: 12px; }
 .flag-image { display: block; width: min(100%, 112px); aspect-ratio: 4 / 3; object-fit: contain; filter: drop-shadow(0 2px 3px #172e312b); pointer-events: none; }
 .flag-choice.is-selected { background: #dbece5; border-color: var(--success); opacity: 1; }
 .flag-choice.is-wrong { border-color: var(--error); animation: answer-shake 260ms ease-in-out; }
+.flag-choice.is-solution { border-color: var(--warning); background: #fff3bd; animation: solution-pulse 850ms ease-in-out infinite alternate; }
 .game-panel[data-mode="flag-only"] .flag-grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
 .game-footer { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; min-height: 66px; gap: 16px; }
 .game-footer p { color: var(--muted); font-size: 13px; }
+.game-actions { display: flex; align-items: center; gap: 18px; }
 .text-button { padding: 10px 2px; background: transparent; border-color: transparent; color: var(--muted); }
 .name-form { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 .name-form label { font-size: 14px; }
@@ -101,6 +107,11 @@ legend { margin-bottom: 12px; }
   0%, 100% { transform: translateX(0); }
   30% { transform: translateX(-6px); }
   70% { transform: translateX(6px); }
+}
+
+@keyframes solution-pulse {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.22); }
 }
 
 @media (max-width: 760px) {
@@ -124,4 +135,6 @@ legend { margin-bottom: 12px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .flag-choice.is-solution { box-shadow: inset 0 0 0 3px var(--warning); }
+  .map-svg [role="button"].is-solution { stroke-width: 4px; }
 }

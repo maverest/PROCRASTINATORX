@@ -18,6 +18,7 @@ def test_template_exposes_mapix_panels_and_controls():
     for element_id in (
         "setupPanel", "gamePanel", "resultPanel", "fatalPanel",
         "modeChoices", "regionChoices", "playButton", "quitButton",
+        "solutionButton",
         "retryButton", "menuButton", "mapContainer", "flagPanel", "flagGrid",
         "countryPrompt", "progressValue", "timerValue", "nameForm", "nameInput",
         "resultTime", "resultPerfect", "resultErrors", "resultAccuracy",
@@ -48,7 +49,7 @@ def test_map_script_loads_local_svg_and_exposes_controller():
     script = (ROOT / "static/mapix/map.js").read_text()
     assert "fetch('/static/mapix/world.svg')" in script
     assert "window.MapixMap" in script
-    for method in ("setRegion", "setFound", "flashWrong", "markCorrect", "destroy"):
+    for method in ("setRegion", "setFound", "setRevealed", "flashWrong", "markCorrect", "destroy"):
         assert method in script
     for interaction in ("wheel", "pointermove", "data-country", "data-target-country"):
         assert interaction in script
@@ -113,6 +114,32 @@ def test_mapix_frontend_does_not_persist_game_results():
     assert "localStorage" not in sources
     assert "sessionStorage" not in sources
     assert "indexedDB" not in sources
+
+
+def test_solution_control_is_hidden_for_all_mode_and_calls_dedicated_route():
+    html = (ROOT / "templates/mapix/index.html").read_text()
+    script = (ROOT / "static/mapix/game.js").read_text()
+
+    assert '<button id="solutionButton"' in html
+    assert "ui.solutionButton.hidden = session.mode === 'all';" in script
+    assert "fetch('/games/mapix/solution'" in script
+    assert "question_index: state.session.question_index" in script
+
+
+def test_revealed_answers_and_imperfect_countries_have_distinct_visual_states():
+    game = (ROOT / "static/mapix/game.js").read_text()
+    map_script = (ROOT / "static/mapix/map.js").read_text()
+    css = (ROOT / "static/mapix/style.css").read_text()
+
+    assert "session.revealed_actions.includes('flag')" in game
+    assert "state.map?.setRevealed" in game
+    assert "session.imperfect" in game
+    assert "classList.toggle('is-imperfect'" in map_script
+    assert "classList.toggle('is-solution'" in map_script
+    assert ".is-imperfect" in css
+    assert ".is-solution" in css
+    reduced = css[css.index("@media (prefers-reduced-motion: reduce)") :]
+    assert ".is-solution" in reduced
 
 
 def test_world_svg_matches_all_catalog_countries():
