@@ -11,6 +11,14 @@ import pytest
 ROOT = Path(__file__).parents[2]
 SVG_NAMESPACE = 'xmlns="http://www.w3.org/2000/svg"'
 SVG_TAG = "{http://www.w3.org/2000/svg}svg"
+REGION_TOTALS = {
+    "africa": 54,
+    "europe": 44,
+    "asia": 48,
+    "north-america": 23,
+    "south-america": 12,
+    "oceania": 14,
+}
 
 
 def test_template_exposes_mapix_panels_and_controls():
@@ -49,7 +57,7 @@ def test_map_script_loads_local_svg_and_exposes_controller():
     script = (ROOT / "static/mapix/map.js").read_text()
     assert "fetch('/static/mapix/world.svg')" in script
     assert "window.MapixMap" in script
-    for method in ("setRegion", "setFound", "setRevealed", "flashWrong", "markCorrect", "destroy"):
+    for method in ("setRegion", "setInteractive", "setFound", "setRevealed", "flashWrong", "markCorrect", "destroy"):
         assert method in script
     for interaction in ("wheel", "pointermove", "data-country", "data-target-country"):
         assert interaction in script
@@ -124,6 +132,31 @@ def test_solution_control_is_hidden_for_all_mode_and_calls_dedicated_route():
     assert "ui.solutionButton.hidden = session.mode === 'all';" in script
     assert "fetch('/games/mapix/solution'" in script
     assert "question_index: state.session.question_index" in script
+    assert "!state.session.solution_available" in script
+
+
+def test_session_is_created_only_after_visible_map_is_ready():
+    script = (ROOT / "static/mapix/game.js").read_text()
+    start_game = script[script.index("async function startGame") : script.index("function handleAnswerError")]
+
+    assert start_game.index("await loadCatalog();") < start_game.index("await state.map.ready;")
+    assert start_game.index("await state.map.ready;") < start_game.index("fetch('/games/mapix/session'")
+
+
+def test_all_mode_makes_country_shapes_noninteractive_but_keeps_map_navigation():
+    game = (ROOT / "static/mapix/game.js").read_text()
+    map_script = (ROOT / "static/mapix/map.js").read_text()
+    css = (ROOT / "static/mapix/style.css").read_text()
+
+    assert "state.map?.setInteractive" in game
+    assert "session.mode !== 'all'" in game
+    assert "function setInteractive" in map_script
+    assert "removeAttribute('role')" in map_script
+    assert "removeAttribute('tabindex')" in map_script
+    assert "if (!interactive) return;" in map_script
+    assert "ArrowLeft" in map_script and "wheel" in map_script
+    assert '[role="button"].is-found' not in css
+    assert ".map-svg .is-found" in css
 
 
 def test_revealed_answers_and_imperfect_countries_have_distinct_visual_states():
@@ -149,6 +182,39 @@ def test_world_svg_matches_all_catalog_countries():
     targets = {n.attrib["data-target-country"] for n in root.iter() if "data-target-country" in n.attrib}
     assert {c["id"] for c in countries} == set(shapes) | targets
     assert shapes == sorted(set(shapes))
+
+
+def _interactive_points(node):
+    if "d" in node.attrib:
+        values = [float(value) for value in re.findall(r"-?\d+(?:\.\d+)?", node.attrib["d"])]
+        return list(zip(values[::2], values[1::2]))
+    return [(float(node.attrib["cx"]), float(node.attrib["cy"]))]
+
+
+def test_each_region_initial_view_contains_a_usable_shape_or_target_for_every_country():
+    rows = json.loads((ROOT / "static/mapix/countries.json").read_text())
+    root = ET.parse(ROOT / "static/mapix/world.svg").getroot()
+    wrap_x = float(root.attrib["data-wrap-x"])
+    wrap_threshold = float(root.attrib["data-wrap-threshold"])
+    points = {row["id"]: [] for row in rows}
+    for node in root.iter():
+        country_id = node.attrib.get("data-country") or node.attrib.get("data-target-country")
+        if country_id:
+            node_points = _interactive_points(node)
+            points[country_id].extend(node_points)
+            if any(x < wrap_threshold for x, _ in node_points):
+                points[country_id].extend((x + wrap_x, y) for x, y in node_points)
+
+    for region, expected_total in REGION_TOTALS.items():
+        x, y, width, height = map(float, root.attrib[f"data-view-{region}"].split())
+        region_rows = [row for row in rows if row["continent"] == region]
+        assert len(region_rows) == expected_total
+        missing = [
+            row["id"] for row in region_rows
+            if not any(x <= px <= x + width and y <= py <= y + height
+                       for px, py in points[row["id"]])
+        ]
+        assert missing == [], f"{region}: {missing}"
 
 
 def test_svg_is_local_interactive_data_not_an_external_map():

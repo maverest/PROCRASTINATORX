@@ -1,6 +1,6 @@
 # CalculatorX V2 et classements amicaux — conception
 
-**Date :** 28 août 2026  
+**Date :** 28 août 2026
 **Statut :** conception validée, en attente du plan d’implémentation
 
 ## Objectif

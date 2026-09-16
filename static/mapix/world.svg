@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3600 1800" role="img" aria-label="Carte des pays du monde">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3600 1800" role="img" aria-label="Carte des pays du monde" data-wrap-x="3600" data-wrap-threshold="400" data-view-world="0 0 3600 1800" data-view-africa="1350 500 1050 1150" data-view-europe="1550 250 950 650" data-view-asia="1900 180 1600 1050" data-view-north-america="0 220 1500 1000" data-view-south-america="850 780 950 1000" data-view-oceania="2650 700 1350 800">
   <g id="mapix-relief" pointer-events="none">
     <path d="M640,400 L700,470 L735,545 L760,625 L790,700" />
     <path d="M1045,830 L1090,960 L1115,1090 L1145,1230 L1180,1390 L1220,1510" />

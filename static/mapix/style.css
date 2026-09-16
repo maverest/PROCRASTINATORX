@@ -69,14 +69,17 @@ legend { margin-bottom: 12px; }
 .map-svg #mapix-relief, .map-svg #mapix-lakes { pointer-events: none; }
 .map-svg #mapix-relief path { fill: none; stroke: #725c3d; stroke-width: 8px; stroke-linecap: round; stroke-linejoin: round; opacity: .38; }
 .map-svg #mapix-lakes path { fill: #4d96b8; stroke: #d2edf4; stroke-width: 3px; opacity: .9; }
-.map-svg [data-country], .map-svg [data-target-country] { fill: rgba(189, 199, 138, .86); stroke: var(--land-edge); stroke-width: .65px; vector-effect: non-scaling-stroke; cursor: pointer; transition: fill 140ms ease; }
+.map-svg [data-country], .map-svg [data-target-country] { fill: rgba(189, 199, 138, .86); stroke: var(--land-edge); stroke-width: .65px; vector-effect: non-scaling-stroke; transition: fill 140ms ease; }
+.map-svg [role="button"] { cursor: pointer; }
+.map-svg.is-selection-disabled [data-country],
+.map-svg.is-selection-disabled [data-target-country] { cursor: grab; }
 .map-svg [data-target-country] { fill: #f2d7a5; stroke: #90794f; stroke-width: 1px; pointer-events: all; }
 .map-svg [role="button"]:hover, .map-svg [role="button"]:focus-visible { fill: #e4b979; stroke: var(--ink); stroke-width: 1.5px; outline: none; }
-.map-svg [role="button"].is-found, .map-svg [role="button"].is-correct { fill: var(--success); stroke: #285847; }
-.map-svg [role="button"].is-found.is-imperfect,
-.map-svg [role="button"].is-correct.is-imperfect { fill: var(--warning); stroke: #765b19; }
-.map-svg [role="button"].is-wrong { fill: var(--error); stroke: #77232b; }
-.map-svg [role="button"].is-solution { fill: #f4cf55; stroke: #5d4610; stroke-width: 2px; animation: solution-pulse 850ms ease-in-out infinite alternate; }
+.map-svg .is-found, .map-svg .is-correct { fill: var(--success); stroke: #285847; }
+.map-svg .is-found.is-imperfect,
+.map-svg .is-correct.is-imperfect { fill: var(--warning); stroke: #765b19; }
+.map-svg .is-wrong { fill: var(--error); stroke: #77232b; }
+.map-svg .is-solution { fill: #f4cf55; stroke: #5d4610; stroke-width: 2px; animation: solution-pulse 850ms ease-in-out infinite alternate; }
 .map-controls { position: absolute; right: 14px; bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
 .map-controls button { width: 42px; height: 42px; padding: 0; font-size: 24px; line-height: 1; box-shadow: 0 2px 8px #172e3114; }
 .flag-panel { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
@@ -136,5 +139,5 @@ legend { margin-bottom: 12px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   .flag-choice.is-solution { box-shadow: inset 0 0 0 3px var(--warning); }
-  .map-svg [role="button"].is-solution { stroke-width: 4px; }
+  .map-svg .is-solution { stroke-width: 4px; }
 }

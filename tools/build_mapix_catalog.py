@@ -34,6 +34,7 @@ ALIASES = {
     "LA": ["Laos"],
     "MD": ["Moldavie"],
     "MK": ["Macédoine", "Macédoine du Nord"],
+    "MM": ["Myanmar", "Birmanie"],
     "PS": ["Palestine"],
     "RU": ["Russie"],
     "SZ": ["Swaziland"],

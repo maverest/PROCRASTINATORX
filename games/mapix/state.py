@@ -18,6 +18,7 @@ from .engine import (
     new_game,
     result_for,
     revealed_actions,
+    solution_available,
 )
 
 
@@ -131,6 +132,7 @@ class MapixState:
             "territory_done": game.territory_done,
             "current_errors": game.current_errors,
             "revealed_actions": list(revealed_actions(game)),
+            "solution_available": solution_available(game),
             "imperfect": sorted(game.imperfect),
             "finished": finished,
             "result": asdict(result_for(game)) if finished else None,

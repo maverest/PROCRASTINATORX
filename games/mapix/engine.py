@@ -133,8 +133,22 @@ def apply_solution(game: Game) -> None:
         raise GameRuleError("solution unavailable")
     if game.finished_at is not None:
         raise GameRuleError("game is finished")
+    if not solution_available(game):
+        return
     _record_current_error(game)
     game.current_revealed = True
+
+
+def solution_available(game: Game) -> bool:
+    """Indique si Solution peut encore révéler une action manquante."""
+    if game.mode == "all" or game.finished_at is not None:
+        return False
+    missing = {
+        action
+        for action in VALID_ACTIONS[game.mode]
+        if not getattr(game, f"{action}_done")
+    }
+    return bool(missing - set(revealed_actions(game)))
 
 
 def revealed_actions(game: Game) -> tuple[str, ...]:

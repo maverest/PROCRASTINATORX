@@ -19,6 +19,19 @@ import re
 
 TOLERANCE = 0.35
 ISO_REPAIRS = {"France": "FR", "Norway": "NO"}
+REGION_VIEWS = {
+    "world": (0, 0, 3600, 1800),
+    "africa": (1350, 500, 1050, 1150),
+    "europe": (1550, 250, 950, 650),
+    "asia": (1900, 180, 1600, 1050),
+    "north-america": (0, 220, 1500, 1000),
+    "south-america": (850, 780, 950, 1000),
+    # Le cadrage traverse l'antiméridien. map.js y duplique uniquement les
+    # formes proches du bord gauche, translatées d'une largeur de monde.
+    "oceania": (2650, 700, 1350, 800),
+}
+WRAP_X = 3600
+WRAP_THRESHOLD = 400
 
 # Relief volontairement stylisé et léger : ces tracés décoratifs utilisent la
 # même projection équirectangulaire que les pays et restent sous les zones de
@@ -157,8 +170,15 @@ def build_svg(source, catalog):
             paths.append(f'    <path data-country="{code}" fill-rule="evenodd" d="{data}" />')
         elif not small:
             raise ValueError(f"Aucune surface ni cible pour {code}")
+    view_attributes = " ".join(
+        f'data-view-{region}="{" ".join(map(str, view))}"'
+        for region, view in REGION_VIEWS.items()
+    )
     return '\n'.join([
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3600 1800" role="img" aria-label="Carte des pays du monde">',
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3600 1800" '
+        'role="img" aria-label="Carte des pays du monde" '
+        f'data-wrap-x="{WRAP_X}" data-wrap-threshold="{WRAP_THRESHOLD}" '
+        f'{view_attributes}>',
         *PHYSICAL_LAYERS,
         '  <g id="mapix-countries">', *paths, '  </g>',
         '  <g id="mapix-targets">', *targets, '  </g>', '</svg>', '',

@@ -1,4 +1,5 @@
 from collections import Counter
+import json
 from pathlib import Path
 
 import pytest
@@ -43,6 +44,21 @@ def test_names_and_aliases_are_unique_after_normalization(catalog):
     assert catalog.by_normalized_name["etats unis"].id == "US"
     assert catalog.by_normalized_name["usa"].id == "US"
     assert normalize_name("  Côte-d’Ivoire ") == "cote d ivoire"
+
+
+@pytest.mark.parametrize("value", ["Myanmar", "myanmar", "Birmanie", "BIRMANIE"])
+def test_myanmar_accepts_both_current_and_historical_names(catalog, value):
+    assert catalog.by_normalized_name[normalize_name(value)].id == "MM"
+
+
+def test_production_json_rejects_a_catalog_missing_one_country(tmp_path):
+    rows = CATALOG_PATH.read_text(encoding="utf-8")
+    countries = json.loads(rows)
+    path = tmp_path / "countries.json"
+    path.write_text(json.dumps(countries[:-1]), encoding="utf-8")
+
+    with pytest.raises(CatalogError, match="195|complet"):
+        CountryCatalog.from_json(path)
 
 
 def test_invalid_duplicate_alias_is_rejected(tmp_path):

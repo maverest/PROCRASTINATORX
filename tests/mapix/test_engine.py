@@ -199,6 +199,30 @@ def test_solution_counts_one_error_and_reveals_without_validating(catalog):
     assert game.territory_done is False
 
 
+def test_solution_is_idempotent_once_every_missing_action_is_revealed(catalog):
+    game = game_with_order(catalog, "flag-territory", ["CH"], now=0.0)
+    apply_answer(game, catalog, "flag", "CH", now=1.0)
+
+    apply_solution(game)
+    apply_solution(game)
+
+    assert game.errors == 1
+    assert game.current_errors == 1
+    assert revealed_actions(game) == ("territory",)
+
+
+def test_solution_after_three_errors_does_not_count_a_fourth_error(catalog):
+    game = game_with_order(catalog, "territory", ["CH"], now=0.0)
+    for _ in range(3):
+        apply_answer(game, catalog, "territory", "FR", now=1.0)
+
+    apply_solution(game)
+
+    assert game.errors == 3
+    assert game.current_errors == 3
+    assert revealed_actions(game) == ("territory",)
+
+
 def test_three_wrong_answers_reveal_only_combined_actions_still_missing(catalog):
     game = game_with_order(catalog, "flag-territory", ["CH", "FR"], now=0.0)
     apply_answer(game, catalog, "territory", "CH", now=1.0)

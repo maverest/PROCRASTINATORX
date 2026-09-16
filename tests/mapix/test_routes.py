@@ -257,6 +257,17 @@ def test_solution_endpoint_counts_error_and_reveals_without_advancing(client, st
     assert payload["found"] == []
 
 
+def test_solution_endpoint_does_not_count_an_already_revealed_answer_twice(client):
+    session = start(client, "territory")
+    request = {"token": session["token"], "question_index": 0}
+
+    first = client.post("/games/mapix/solution", json=request).get_json()
+    second = client.post("/games/mapix/solution", json=request).get_json()
+
+    assert first["errors"] == second["errors"] == 1
+    assert second["solution_available"] is False
+
+
 def test_solution_endpoint_rejects_all_mode_without_mutation(client, state):
     session = start(client, "all")
     response = client.post(
@@ -322,17 +333,15 @@ def test_build_game_uses_configured_static_root(tmp_path, monkeypatch):
 
     static_root = tmp_path / "assets"
     (static_root / "mapix").mkdir(parents=True)
-    (static_root / "mapix/countries.json").write_text(
-        '[{"id":"CH","name":"Suisse","continent":"europe","flag":"flags/CH.svg","aliases":[]}]',
-        encoding="utf-8",
-    )
+    source = Path(__file__).parents[2] / "static/mapix/countries.json"
+    (static_root / "mapix/countries.json").write_bytes(source.read_bytes())
     monkeypatch.setenv("PROCRASTINATOR_STATIC", str(static_root))
     mounted = build_game(tmp_path)
     app = Flask(__name__)
     app.register_blueprint(mounted.blueprint)
     session = start(app.test_client())
-    assert session["total"] == 1
-    assert session["remaining_flags"] == ["CH"]
+    assert session["total"] == 44
+    assert "CH" in session["remaining_flags"]
 
 
 def test_build_game_finds_real_catalog_from_another_working_directory(tmp_path, monkeypatch):

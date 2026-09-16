@@ -110,6 +110,7 @@ def test_public_payload_does_not_expose_target_or_question_order(state, catalog,
     assert session["territory_done"] is False
     assert session["current_errors"] == 0
     assert session["revealed_actions"] == []
+    assert session["solution_available"] is (mode != "all")
     assert session["imperfect"] == []
     # Les choix suivent un ordre public stable, jamais l'ordre privé du tirage.
     assert session["remaining_flags"] == sorted(
@@ -122,7 +123,7 @@ def test_public_payload_does_not_expose_target_or_question_order(state, catalog,
         "mode", "region", "token", "total", "question_index", "errors", "found",
         "remaining_flags", "current", "flag_done", "territory_done", "result",
         "finished", "elapsed_seconds", "current_errors", "revealed_actions",
-        "imperfect",
+        "imperfect", "solution_available",
     }
 
 
@@ -242,6 +243,17 @@ def test_combined_solution_reveals_only_action_still_missing(state, target):
 
     assert response["revealed_actions"] == ["territory"]
     assert response["flag_done"] is True
+
+
+def test_repeated_solution_is_idempotent_and_reported_unavailable(state):
+    session = state.start("territory", "europe")
+
+    first = state.solution(session["token"], 0)
+    second = state.solution(session["token"], 0)
+
+    assert first["errors"] == second["errors"] == 1
+    assert second["current_errors"] == 1
+    assert second["solution_available"] is False
 
 
 def test_stale_solution_cannot_mutate_next_question(state, target):

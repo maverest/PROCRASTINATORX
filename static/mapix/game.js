@@ -88,7 +88,8 @@
     const canName = canAnswer && state.session.mode === 'all';
     ui.nameInput.disabled = !canName;
     ui.nameSubmit.disabled = !canName;
-    ui.solutionButton.disabled = !canAnswer || state.session.mode === 'all';
+    ui.solutionButton.disabled = !canAnswer || state.session.mode === 'all' ||
+      !state.session.solution_available;
     for (const button of ui.flagGrid.querySelectorAll('.flag-choice')) {
       button.disabled = !canAnswer || button.dataset.locked === 'true';
     }
@@ -142,6 +143,7 @@
       .find(button => button.dataset.region === session.region).textContent;
     renderFlags();
     state.map?.setFound(session.found, session.imperfect);
+    state.map?.setInteractive(['territory', 'flag-territory'].includes(session.mode));
     state.map?.setRevealed(
       session.revealed_actions.includes('territory') ? currentCountryId() : null,
     );
@@ -170,16 +172,7 @@
     stopTimer();
     try {
       await loadCatalog();
-      const response = await fetch('/games/mapix/session', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({mode: state.mode, region: state.region}),
-      });
-      if (!response.ok) throw new Error('start');
-      state.session = await response.json();
-      ui.flagPanel.scrollTop = 0;
-      ui.gameFeedback.textContent = '';
-      if (state.session.mode !== 'flag-only') {
+      if (state.mode !== 'flag-only') {
         if (!state.map) {
           state.map = window.MapixMap.create(ui.mapContainer, {
             onCountry: id => {
@@ -190,6 +183,20 @@
           });
         }
         await state.map.ready;
+        state.map.setRegion(state.region);
+        state.map.setInteractive(['territory', 'flag-territory'].includes(state.mode));
+        state.map.setFound([]);
+      }
+      const response = await fetch('/games/mapix/session', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({mode: state.mode, region: state.region}),
+      });
+      if (!response.ok) throw new Error('start');
+      state.session = await response.json();
+      ui.flagPanel.scrollTop = 0;
+      ui.gameFeedback.textContent = '';
+      if (state.session.mode !== 'flag-only') {
         state.map.setRegion(state.session.region);
         state.map.setFound(state.session.found);
       }

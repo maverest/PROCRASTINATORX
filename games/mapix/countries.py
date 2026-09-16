@@ -113,7 +113,16 @@ class CountryCatalog:
                 raise CatalogError(f"invalid continent: {country_id}")
             countries.append(Country(country_id, name, continent, flag, tuple(aliases)))
 
-        return cls(tuple(countries))
+        catalog = cls(tuple(countries))
+        missing = VALID_COUNTRY_IDS - set(catalog.by_id)
+        extra = set(catalog.by_id) - VALID_COUNTRY_IDS
+        if missing or extra:
+            raise CatalogError(
+                "catalogue incomplet: exactement 195 pays attendus "
+                f"(absents: {', '.join(sorted(missing)) or '-'}; "
+                f"inconnus: {', '.join(sorted(extra)) or '-'})"
+            )
+        return catalog
 
     def for_region(self, region: str) -> tuple[Country, ...]:
         """Retourne les pays d'une région de jeu."""

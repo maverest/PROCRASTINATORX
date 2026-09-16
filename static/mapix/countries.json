@@ -941,7 +941,10 @@
     "name": "Myanmar (Birmanie)",
     "continent": "asia",
     "flag": "🇲🇲",
-    "aliases": []
+    "aliases": [
+      "Myanmar",
+      "Birmanie"
+    ]
   },
   {
     "id": "NP",
