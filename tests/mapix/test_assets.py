@@ -61,6 +61,8 @@ def test_map_script_loads_local_svg_and_exposes_controller():
         assert method in script
     for interaction in ("wheel", "pointermove", "data-country", "data-target-country"):
         assert interaction in script
+    assert "[data-wrap-region]" in script
+    assert "startsNearDateline" not in script
 
 
 def test_template_provides_accessible_setup_and_feedback():
@@ -195,15 +197,17 @@ def test_each_region_initial_view_contains_a_usable_shape_or_target_for_every_co
     rows = json.loads((ROOT / "static/mapix/countries.json").read_text())
     root = ET.parse(ROOT / "static/mapix/world.svg").getroot()
     wrap_x = float(root.attrib["data-wrap-x"])
-    wrap_threshold = float(root.attrib["data-wrap-threshold"])
     points = {row["id"]: [] for row in rows}
+    copied_points = {row["id"]: [] for row in rows}
     for node in root.iter():
         country_id = node.attrib.get("data-country") or node.attrib.get("data-target-country")
         if country_id:
             node_points = _interactive_points(node)
             points[country_id].extend(node_points)
-            if any(x < wrap_threshold for x, _ in node_points):
-                points[country_id].extend((x + wrap_x, y) for x, y in node_points)
+            if node.attrib.get("data-wrap-region") == "oceania":
+                shifted = [(x + wrap_x, y) for x, y in node_points]
+                copied_points[country_id].extend(shifted)
+                points[country_id].extend(shifted)
 
     for region, expected_total in REGION_TOTALS.items():
         x, y, width, height = map(float, root.attrib[f"data-view-{region}"].split())
@@ -215,6 +219,26 @@ def test_each_region_initial_view_contains_a_usable_shape_or_target_for_every_co
                        for px, py in points[row["id"]])
         ]
         assert missing == [], f"{region}: {missing}"
+        foreign_copies = [
+            country_id for country_id, country_points in copied_points.items()
+            if country_points
+            and any(x <= px <= x + width and y <= py <= y + height
+                    for px, py in country_points)
+            and country_id not in {row["id"] for row in region_rows}
+        ]
+        assert foreign_copies == [], f"{region}: copies étrangères {foreign_copies}"
+
+
+def test_dateline_copy_eligibility_is_explicit_and_limited_to_oceania():
+    root = ET.parse(ROOT / "static/mapix/world.svg").getroot()
+    marked = [
+        node.attrib.get("data-country") or node.attrib.get("data-target-country")
+        for node in root.iter()
+        if node.attrib.get("data-wrap-region") == "oceania"
+    ]
+
+    assert set(marked) == {"FJ", "KI", "NZ", "TO", "WS"}
+    assert "US" not in marked
 
 
 def test_svg_is_local_interactive_data_not_an_external_map():
@@ -326,7 +350,11 @@ def generate(tmp_path, features, codes):
     catalog = tmp_path / "countries.json"
     output = tmp_path / "world.svg"
     source.write_text(json.dumps({"type": "FeatureCollection", "features": features}))
-    catalog.write_text(json.dumps([{"id": c} for c in codes]))
+    rows = [
+        code if isinstance(code, dict) else {"id": code, "continent": "europe"}
+        for code in codes
+    ]
+    catalog.write_text(json.dumps(rows))
     result = subprocess.run([sys.executable, str(ROOT / "tools/build_mapix_map.py"),
                              str(source), str(catalog), str(output)], capture_output=True, text=True)
     return result, output
@@ -359,6 +387,27 @@ def test_converter_always_emits_safe_physical_layers_below_countries(tmp_path):
     result, output = generate(tmp_path, [feature("FR", ring)], ["FR"])
     assert result.returncode == 0, result.stderr
     assert_physical_layers(ET.parse(output).getroot())
+
+
+def test_converter_marks_only_oceania_geometry_near_the_dateline_for_copy(tmp_path):
+    low = [[-179, 0], [-178, 0], [-178, 1], [-179, 0]]
+    result, output = generate(
+        tmp_path,
+        [feature("US", [low]), feature("WS", [low])],
+        [
+            {"id": "US", "continent": "north-america"},
+            {"id": "WS", "continent": "oceania"},
+        ],
+    )
+    assert result.returncode == 0, result.stderr
+    nodes = {
+        node.attrib["data-country"]: node
+        for node in ET.parse(output).getroot().iter()
+        if "data-country" in node.attrib
+    }
+
+    assert "data-wrap-region" not in nodes["US"].attrib
+    assert nodes["WS"].attrib["data-wrap-region"] == "oceania"
 
 
 def test_converter_enlarges_small_country_at_largest_polygon(tmp_path):

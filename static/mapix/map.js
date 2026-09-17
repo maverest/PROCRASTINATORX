@@ -25,25 +25,14 @@
     return {
       views,
       wrapX: numberAttribute(svg, 'data-wrap-x'),
-      wrapThreshold: numberAttribute(svg, 'data-wrap-threshold'),
     };
   }
 
-  function startsNearDateline(node, threshold) {
-    if (node.hasAttribute('cx')) return Number(node.getAttribute('cx')) < threshold;
-    const coordinates = (node.getAttribute('d') || '').match(/-?\d+(?:\.\d+)?/g) || [];
-    for (let index = 0; index < coordinates.length; index += 2) {
-      if (Number(coordinates[index]) < threshold) return true;
-    }
-    return false;
-  }
-
-  function addDatelineCopies(svg, wrapX, threshold) {
+  function addDatelineCopies(svg, wrapX) {
     const group = document.createElementNS(svg.namespaceURI, 'g');
     group.id = 'mapix-wrap-copies';
     group.setAttribute('aria-hidden', 'true');
-    for (const node of [...svg.querySelectorAll(COUNTRY_SELECTOR)]) {
-      if (!startsNearDateline(node, threshold)) continue;
+    for (const node of svg.querySelectorAll('[data-wrap-region]')) {
       const copy = node.cloneNode(true);
       copy.setAttribute('transform', `translate(${wrapX} 0)`);
       copy.setAttribute('data-mapix-wrap-copy', '');
@@ -59,7 +48,7 @@
     const tags = new Set(['svg', 'g', 'path', 'circle']);
     const attributes = new Set([
       'xmlns', 'viewBox', 'role', 'aria-label', 'id', 'data-country',
-      'data-target-country', 'data-wrap-x', 'data-wrap-threshold',
+      'data-target-country', 'data-wrap-x', 'data-wrap-region',
       ...REGIONS.map(region => `data-view-${region}`),
       'fill-rule', 'd', 'cx', 'cy', 'r', 'fill', 'pointer-events',
     ]);
@@ -71,7 +60,8 @@
     for (const node of [root, ...root.querySelectorAll('*')]) {
       if (!tags.has(node.localName) || node.namespaceURI !== root.namespaceURI ||
           [...node.attributes].some(attribute => !attributes.has(attribute.name)) ||
-          (node.hasAttribute('fill') && node.getAttribute('fill') !== 'transparent')) {
+          (node.hasAttribute('fill') && node.getAttribute('fill') !== 'transparent') ||
+          (node.hasAttribute('data-wrap-region') && node.getAttribute('data-wrap-region') !== 'oceania')) {
         throw new Error('Unsafe map');
       }
     }
@@ -240,7 +230,7 @@
       svg = parseMap(source);
       const config = readMapConfig(svg);
       configuredViews = config.views;
-      addDatelineCopies(svg, config.wrapX, config.wrapThreshold);
+      addDatelineCopies(svg, config.wrapX);
       svg.classList.add('map-svg');
       // Un rôle img rendrait ses boutons descendants invisibles à l'accessibilité.
       svg.setAttribute('role', 'group');

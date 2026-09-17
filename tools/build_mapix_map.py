@@ -148,6 +148,9 @@ def build_svg(source, catalog):
     country_ids = {row["id"] for row in catalog}
     if not country_ids or any(not re.fullmatch(r"[A-Z]{2}", code) for code in country_ids):
         raise ValueError("Le catalogue doit contenir des codes ISO-2")
+    continents = {row["id"]: row.get("continent") for row in catalog}
+    if any(not isinstance(continent, str) or not continent for continent in continents.values()):
+        raise ValueError("Le catalogue doit attribuer un continent à chaque pays")
     grouped = country_features(source, country_ids)
     paths, targets = [], []
     for code in sorted(grouped):
@@ -158,8 +161,15 @@ def build_svg(source, catalog):
         xs, ys = zip(*largest[0])
         min_x, max_x, min_y, max_y = min(xs), max(xs), min(ys), max(ys)
         small = max_x - min_x < 14 or max_y - min_y < 14
+        target_x = (min_x + max_x) / 2
+        target_y = (min_y + max_y) / 2
+        wrap_target = (
+            ' data-wrap-region="oceania"'
+            if continents[code] == "oceania" and target_x < WRAP_THRESHOLD
+            else ""
+        )
         if small:
-            targets.append(f'    <circle data-target-country="{code}" cx="{(min_x + max_x) / 2:.1f}" cy="{(min_y + max_y) / 2:.1f}" r="7.0" fill="transparent" pointer-events="all" />')
+            targets.append(f'    <circle data-target-country="{code}"{wrap_target} cx="{target_x:.1f}" cy="{target_y:.1f}" r="7.0" fill="transparent" pointer-events="all" />')
         parts = []
         for polygon in polygons:
             outer = ring_path(polygon[0])
@@ -167,7 +177,18 @@ def build_svg(source, catalog):
                 parts.append(" ".join(filter(None, [outer] + [ring_path(ring) for ring in polygon[1:]])))
         data = " ".join(sorted(parts))
         if data:
-            paths.append(f'    <path data-country="{code}" fill-rule="evenodd" d="{data}" />')
+            near_dateline = any(
+                x < WRAP_THRESHOLD
+                for polygon in polygons
+                for ring in polygon
+                for x, _ in ring
+            )
+            wrap_path = (
+                ' data-wrap-region="oceania"'
+                if continents[code] == "oceania" and near_dateline
+                else ""
+            )
+            paths.append(f'    <path data-country="{code}"{wrap_path} fill-rule="evenodd" d="{data}" />')
         elif not small:
             raise ValueError(f"Aucune surface ni cible pour {code}")
     view_attributes = " ".join(
@@ -177,7 +198,7 @@ def build_svg(source, catalog):
     return '\n'.join([
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3600 1800" '
         'role="img" aria-label="Carte des pays du monde" '
-        f'data-wrap-x="{WRAP_X}" data-wrap-threshold="{WRAP_THRESHOLD}" '
+        f'data-wrap-x="{WRAP_X}" '
         f'{view_attributes}>',
         *PHYSICAL_LAYERS,
         '  <g id="mapix-countries">', *paths, '  </g>',

@@ -7,7 +7,7 @@ from flask import Flask
 import pytest
 
 from games.mapix.countries import Country, CountryCatalog
-from games.mapix.state import MapixState
+from games.mapix.state import MapixState, NoActiveGame
 
 
 @pytest.fixture
@@ -53,6 +53,14 @@ def test_index_is_scoped_to_mapix_prefix(client):
     assert response.status_code == 200
     assert b"<title>Mapix</title>" in response.data
     assert client.get("/mapix/").status_code == 404
+
+
+def test_failed_asset_preparation_does_not_create_a_server_session(client, state):
+    assert client.get("/games/mapix/").status_code == 200
+    assert client.get("/static/mapix/world.svg").status_code == 404
+
+    with pytest.raises(NoActiveGame):
+        state.snapshot()
 
 
 @pytest.mark.parametrize("field,value,message", [
