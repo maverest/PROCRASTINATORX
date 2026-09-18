@@ -55,6 +55,7 @@ def test_setup_lists_four_modes_and_seven_regions():
 
 def test_map_script_loads_local_svg_and_exposes_controller():
     script = (ROOT / "static/mapix/map.js").read_text()
+    css = (ROOT / "static/mapix/style.css").read_text()
     assert "fetch('/static/mapix/world.svg')" in script
     assert "window.MapixMap" in script
     for method in ("setRegion", "setInteractive", "setFound", "setRevealed", "flashWrong", "markCorrect", "destroy"):
@@ -62,6 +63,8 @@ def test_map_script_loads_local_svg_and_exposes_controller():
     for interaction in ("wheel", "pointermove", "data-country", "data-target-country"):
         assert interaction in script
     assert "[data-wrap-region]" in script
+    assert "is-outside-region" in script
+    assert ".is-outside-region { display: none; }" in css
     assert "startsNearDateline" not in script
 
 
@@ -179,11 +182,16 @@ def test_revealed_answers_and_imperfect_countries_have_distinct_visual_states():
 
 def test_world_svg_matches_all_catalog_countries():
     countries = json.loads((ROOT / "static/mapix/countries.json").read_text())
+    regions = {country["id"]: country["continent"] for country in countries}
     root = ET.parse(ROOT / "static/mapix/world.svg").getroot()
     shapes = [n.attrib["data-country"] for n in root.iter() if "data-country" in n.attrib]
     targets = {n.attrib["data-target-country"] for n in root.iter() if "data-target-country" in n.attrib}
     assert {c["id"] for c in countries} == set(shapes) | targets
     assert shapes == sorted(set(shapes))
+    for node in root.iter():
+        country_id = node.attrib.get("data-country") or node.attrib.get("data-target-country")
+        if country_id:
+            assert node.attrib.get("data-region") == regions[country_id]
 
 
 def _interactive_points(node):
@@ -193,7 +201,7 @@ def _interactive_points(node):
     return [(float(node.attrib["cx"]), float(node.attrib["cy"]))]
 
 
-def test_each_region_initial_view_contains_a_usable_shape_or_target_for_every_country():
+def test_each_region_initial_view_contains_every_country_and_foreign_ones_are_identifiable():
     rows = json.loads((ROOT / "static/mapix/countries.json").read_text())
     root = ET.parse(ROOT / "static/mapix/world.svg").getroot()
     wrap_x = float(root.attrib["data-wrap-x"])
@@ -219,6 +227,19 @@ def test_each_region_initial_view_contains_a_usable_shape_or_target_for_every_co
                        for px, py in points[row["id"]])
         ]
         assert missing == [], f"{region}: {missing}"
+        foreign_in_frame = [
+            country_id for country_id, country_points in points.items()
+            if country_points
+            and any(x <= px <= x + width and y <= py <= y + height
+                    for px, py in country_points)
+            and country_id not in {row["id"] for row in region_rows}
+        ]
+        for country_id in foreign_in_frame:
+            assert all(
+                node.attrib.get("data-region") != region
+                for node in root.iter()
+                if (node.attrib.get("data-country") or node.attrib.get("data-target-country")) == country_id
+            )
         foreign_copies = [
             country_id for country_id, country_points in copied_points.items()
             if country_points
@@ -408,6 +429,23 @@ def test_converter_marks_only_oceania_geometry_near_the_dateline_for_copy(tmp_pa
 
     assert "data-wrap-region" not in nodes["US"].attrib
     assert nodes["WS"].attrib["data-wrap-region"] == "oceania"
+    assert nodes["US"].attrib["data-region"] == "north-america"
+    assert nodes["WS"].attrib["data-region"] == "oceania"
+
+
+def test_converter_chooses_small_country_target_deterministically_on_equal_areas(tmp_path):
+    west = [[0, 0], [0.1, 0], [0.1, 0.1], [0, 0]]
+    east = [[10, 0], [10.1, 0], [10.1, 0.1], [10, 0]]
+    feature_row = feature("VA", [[west], [east]], "MultiPolygon")
+
+    result, output = generate(tmp_path, [feature_row], ["VA"])
+    assert result.returncode == 0, result.stderr
+    first = output.read_bytes()
+    feature_row["geometry"]["coordinates"].reverse()
+    result, output = generate(tmp_path, [feature_row], ["VA"])
+
+    assert result.returncode == 0, result.stderr
+    assert output.read_bytes() == first
 
 
 def test_converter_enlarges_small_country_at_largest_polygon(tmp_path):

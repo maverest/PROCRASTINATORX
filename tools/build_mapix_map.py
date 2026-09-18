@@ -157,7 +157,16 @@ def build_svg(source, catalog):
         polygons = [[project_ring(ring, code) for ring in polygon] for polygon in grouped[code]]
         if not polygons or any(not polygon for polygon in polygons):
             raise ValueError(f"Aucune géométrie pour {code}")
-        largest = max(polygons, key=lambda polygon: area(polygon[0]) - sum(area(r) for r in polygon[1:]))
+        # La géométrie source n'a pas d'ordre contractuel. En cas d'aires
+        # identiques, le tracé projeté fournit un départage stable afin que la
+        # cible des micro-États soit reproductible.
+        largest = max(
+            polygons,
+            key=lambda polygon: (
+                area(polygon[0]) - sum(area(r) for r in polygon[1:]),
+                ring_path(polygon[0]),
+            ),
+        )
         xs, ys = zip(*largest[0])
         min_x, max_x, min_y, max_y = min(xs), max(xs), min(ys), max(ys)
         small = max_x - min_x < 14 or max_y - min_y < 14
@@ -169,7 +178,7 @@ def build_svg(source, catalog):
             else ""
         )
         if small:
-            targets.append(f'    <circle data-target-country="{code}"{wrap_target} cx="{target_x:.1f}" cy="{target_y:.1f}" r="7.0" fill="transparent" pointer-events="all" />')
+            targets.append(f'    <circle data-target-country="{code}" data-region="{continents[code]}"{wrap_target} cx="{target_x:.1f}" cy="{target_y:.1f}" r="7.0" fill="transparent" pointer-events="all" />')
         parts = []
         for polygon in polygons:
             outer = ring_path(polygon[0])
@@ -188,7 +197,7 @@ def build_svg(source, catalog):
                 if continents[code] == "oceania" and near_dateline
                 else ""
             )
-            paths.append(f'    <path data-country="{code}"{wrap_path} fill-rule="evenodd" d="{data}" />')
+            paths.append(f'    <path data-country="{code}" data-region="{continents[code]}"{wrap_path} fill-rule="evenodd" d="{data}" />')
         elif not small:
             raise ValueError(f"Aucune surface ni cible pour {code}")
     view_attributes = " ".join(

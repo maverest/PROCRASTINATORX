@@ -70,6 +70,7 @@ legend { margin-bottom: 12px; }
 .map-svg #mapix-relief path { fill: none; stroke: #725c3d; stroke-width: 8px; stroke-linecap: round; stroke-linejoin: round; opacity: .38; }
 .map-svg #mapix-lakes path { fill: #4d96b8; stroke: #d2edf4; stroke-width: 3px; opacity: .9; }
 .map-svg [data-country], .map-svg [data-target-country] { fill: rgba(189, 199, 138, .86); stroke: var(--land-edge); stroke-width: .65px; vector-effect: non-scaling-stroke; transition: fill 140ms ease; }
+.map-svg .is-outside-region { display: none; }
 .map-svg [role="button"] { cursor: pointer; }
 .map-svg.is-selection-disabled [data-country],
 .map-svg.is-selection-disabled [data-target-country] { cursor: grab; }

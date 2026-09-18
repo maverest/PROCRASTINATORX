@@ -48,7 +48,7 @@
     const tags = new Set(['svg', 'g', 'path', 'circle']);
     const attributes = new Set([
       'xmlns', 'viewBox', 'role', 'aria-label', 'id', 'data-country',
-      'data-target-country', 'data-wrap-x', 'data-wrap-region',
+      'data-target-country', 'data-region', 'data-wrap-x', 'data-wrap-region',
       ...REGIONS.map(region => `data-view-${region}`),
       'fill-rule', 'd', 'cx', 'cy', 'r', 'fill', 'pointer-events',
     ]);
@@ -61,6 +61,7 @@
       if (!tags.has(node.localName) || node.namespaceURI !== root.namespaceURI ||
           [...node.attributes].some(attribute => !attributes.has(attribute.name)) ||
           (node.hasAttribute('fill') && node.getAttribute('fill') !== 'transparent') ||
+          (node.hasAttribute('data-region') && !REGIONS.slice(1).includes(node.getAttribute('data-region'))) ||
           (node.hasAttribute('data-wrap-region') && node.getAttribute('data-wrap-region') !== 'oceania')) {
         throw new Error('Unsafe map');
       }
@@ -122,7 +123,8 @@
     function select(node) {
       if (!interactive) return;
       const target = node.closest?.(COUNTRY_SELECTOR);
-      if (!destroyed && target && svg.contains(target)) options.onCountry?.(countryId(target));
+      if (!destroyed && target && !target.classList.contains('is-outside-region') &&
+          svg.contains(target)) options.onCountry?.(countryId(target));
     }
 
     function endDrag() {
@@ -149,6 +151,13 @@
       if (svg) endDrag();
       suppressClick = false;
       clearFeedback();
+      if (svg) {
+        for (const node of svg.querySelectorAll(COUNTRY_SELECTOR)) {
+          node.classList.toggle('is-outside-region',
+            currentRegion !== 'world' && node.dataset.region !== currentRegion);
+        }
+        setInteractive(interactive);
+      }
       renderView();
     }
 
@@ -158,7 +167,7 @@
       svg.classList.toggle('is-selection-disabled', !interactive);
       for (const node of svg.querySelectorAll(COUNTRY_SELECTOR)) {
         if (node.hasAttribute('data-mapix-wrap-copy')) continue;
-        if (interactive) {
+        if (interactive && !node.classList.contains('is-outside-region')) {
           node.setAttribute('tabindex', '0');
           node.setAttribute('role', 'button');
           node.setAttribute('aria-label', 'Choisir ce territoire');
