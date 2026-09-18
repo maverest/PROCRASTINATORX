@@ -8,8 +8,8 @@ Une petite application macOS regroupant des mini-jeux. Le premier est
 ## Jouer depuis les sources
 
 ```bash
-git clone https://github.com/maverest/Orquantix.git
-cd Orquantix
+git clone https://github.com/maverest/PROCRASTINATORX.git
+cd PROCRASTINATORX
 python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -28,18 +28,18 @@ ses ressources qu’au moment où sa carte est ouverte.
 plutôt que dans la fenêtre native, ce qui donne accès aux outils de
 développement.
 
-Pour lancer directement cette branche de travail avec l'environnement déjà
-installé :
+Pour lancer directement le projet depuis le dossier local avec l'environnement
+déjà installé :
 
 ```bash
-cd /Users/mverest/Desktop/PROCRASTINATORX/.worktrees/menu-calculatorx
-/Users/mverest/Desktop/PROCRASTINATORX/.venv/bin/python main.py --design
+cd /Users/mverest/Desktop/PROCRASTINATORX
+.venv/bin/python main.py
 ```
 
 ## Construire l'application
 
 ```bash
-cd /Users/mverest/Desktop/PROCRASTINATORX/.worktrees/menu-calculatorx
+cd /Users/mverest/Desktop/PROCRASTINATORX
 ./build.sh
 open dist/PROCRASTINATOR.app
 ```
